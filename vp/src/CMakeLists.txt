@@ -1,5 +1,5 @@
 include_directories(.)
 
-subdirs(symex)
+subdirs(clover)
 subdirs(core)
 subdirs(platform)
