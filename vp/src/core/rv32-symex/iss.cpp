@@ -19,6 +19,7 @@ using namespace rv32;
 #define RS3 instr.rs3()
 
 #define I_IMM solver.BVC(std::nullopt, (uint32_t)instr.I_imm())->sext(32)
+#define U_IMM solver.BVC(std::nullopt, (uint32_t)instr.U_imm()) /* XXX: sext? */
 
 const char *regnames[] = {
     "zero (x0)", "ra   (x1)", "sp   (x2)", "gp   (x3)", "tp   (x4)", "t0   (x5)", "t1   (x6)", "t2   (x7)",
@@ -267,11 +268,13 @@ void ISS::exec_step() {
 		case Opcode::SRAI:
 			regs[instr.rd()] = regs[instr.rs1()] >> instr.shamt();
 			break;
+#endif
 
 		case Opcode::LUI:
-			regs[instr.rd()] = instr.U_imm();
+			regs.write(RD, U_IMM);
 			break;
 
+#if 0
 		case Opcode::AUIPC:
 			regs[instr.rd()] = last_pc + instr.U_imm();
 			break;
