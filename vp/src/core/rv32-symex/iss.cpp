@@ -37,11 +37,11 @@ int regcolors[] = {
 #endif
 };
 
-RegFile::RegFile() {
+RegFile::RegFile(clover::Solver &_solver) : solver(_solver) {
 	memset(regs, 0, sizeof(regs));
 }
 
-RegFile::RegFile(const RegFile &other) {
+RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver) {
 	memcpy(regs, other.regs, sizeof(regs));
 }
 
@@ -80,7 +80,7 @@ void RegFile::show() {
 	}
 }
 
-ISS::ISS(uint32_t hart_id, bool use_E_base_isa) : systemc_name("Core-" + std::to_string(hart_id)) {
+ISS::ISS(clover::Solver &_solver, uint32_t hart_id, bool use_E_base_isa) : solver(_solver), regs(_solver), systemc_name("Core-" + std::to_string(hart_id)) {
 	csrs.mhartid.reg = hart_id;
 	if (use_E_base_isa)
 		csrs.misa.select_E_base_isa();
