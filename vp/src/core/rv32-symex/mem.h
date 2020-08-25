@@ -174,37 +174,21 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		_store_data(addr, value);
 	}
 
-#if 0
 	virtual int32_t atomic_load_word(uint64_t addr) override {
-		bus_lock->lock(iss.get_hart_id());
-		return load_word(addr);
+		throw std::string(__func__) + " not implemented";
 	}
 	virtual void atomic_store_word(uint64_t addr, uint32_t value) override {
-		assert(bus_lock->is_locked(iss.get_hart_id()));
-		store_word(addr, value);
+		throw std::string(__func__) + " not implemented";
 	}
 	virtual int32_t atomic_load_reserved_word(uint64_t addr) override {
-		bus_lock->lock(iss.get_hart_id());
-		lr_addr = addr;
-		return load_word(addr);
+		throw std::string(__func__) + " not implemented";
 	}
 	virtual bool atomic_store_conditional_word(uint64_t addr, uint32_t value) override {
-		/* According to the RISC-V ISA, an implementation can fail each LR/SC sequence that does not satisfy the forward
-		 * progress semantic.
-		 * The lock is established by the LR instruction and the lock is kept while forward progress is maintained. */
-		if (bus_lock->is_locked(iss.get_hart_id())) {
-			if (addr == lr_addr) {
-				store_word(addr, value);
-				return true;
-			}
-			atomic_unlock();
-		}
-		return false;
+		throw std::string(__func__) + " not implemented";
 	}
 	virtual void atomic_unlock() override {
-		bus_lock->unlock(iss.get_hart_id());
+		throw std::string(__func__) + " not implemented";
 	}
-#endif
 };
 
 }  // namespace rv32
