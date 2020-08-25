@@ -6,7 +6,6 @@ add_library(rv32-symex
         ${HEADERS})
 
 target_link_libraries(rv32-symex clover core-common ${SoftFloat_LIBRARIES})
-set_property(TARGET rv32-symex PROPERTY CXX_STANDARD 17)
 
 if(COLOR_THEME STREQUAL "LIGHT")
 	message("> using color theme LIGHT")

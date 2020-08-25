@@ -1,7 +1,5 @@
 project(vp-breadboard) # Your project name
 
-set(CMAKE_CXX_STANDARD 11) # This is equal to QMAKE_CXX_FLAGS += -std=c++0x
-
 cmake_minimum_required(VERSION 3.1.0)
 
 # Find includes in corresponding build directories
