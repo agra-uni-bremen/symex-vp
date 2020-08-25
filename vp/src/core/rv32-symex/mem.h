@@ -148,16 +148,16 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
     }
 
 	Value load_double(Address addr) override {
-		return _load_data(addr, sizeof(int64_t));
+		return _load_data(addr, sizeof(uint64_t))->sext(64);
 	}
 	Value load_word(Address addr) override {
-		return _load_data(addr, sizeof(int32_t));
+		return _load_data(addr, sizeof(uint32_t))->sext(32);
 	}
 	Value load_half(Address addr) override {
-		return _load_data(addr, sizeof(int16_t));
+		return _load_data(addr, sizeof(uint16_t))->sext(16);
 	}
 	Value load_byte(Address addr) override {
-		return _load_data(addr, sizeof(int8_t));
+		return _load_data(addr, sizeof(uint8_t))->sext(8);
 	}
 	Value load_uhalf(Address addr) override {
 		return _load_data(addr, sizeof(uint16_t));
