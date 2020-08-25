@@ -207,6 +207,11 @@ int sys_sym_reg(iss_syscall_if *core, uint64_t index) {
 	return 0;
 }
 
+int sys_sym_mem(iss_syscall_if *core, uint64_t addr, uint64_t size) {
+	core->make_symbolic(addr, size);
+	return 0;
+}
+
 // TODO: add support for additional syscalls if necessary
 int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t) {
 	// NOTE: when linking with CRT, the most basic example only calls *gettimeofday* and finally *exit*
@@ -241,6 +246,9 @@ int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint
 
 		case SYS_sym_reg:
 			return sys_sym_reg(cores.at(n), _a0);
+
+		case SYS_sym_mem:
+			return sys_sym_mem(cores.at(n), _a0, _a1);
 
 		case SYS_exit:
 			shall_exit = true;
