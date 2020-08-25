@@ -343,9 +343,23 @@ void ISS::exec_step() {
 			trap_check_addr_alignment<2, true>(addr);
 			regs[instr.rd()] = mem->load_uhalf(addr);
 		} break;
+
+		case Opcode::BEQ:
+			if (regs[instr.rs1()] == regs[instr.rs2()]) {
+				cur_pc = last_pc + instr.B_imm();
+				trap_check_pc_alignment();
+			}
+			break;
+
+		case Opcode::BNE:
+			if (regs[instr.rs1()] != regs[instr.rs2()]) {
+				pc = last_pc + instr.B_imm();
+				trap_check_pc_alignment();
+			}
+			break;
 #endif
 
-		case Opcode::BEQ: {
+		case Opcode::BLT: {
 			auto res = regs[RS1]->slt(regs[RS2]);
 			bool cond = solver.eval(res->concrete);
 			if (cond)
@@ -356,20 +370,6 @@ void ISS::exec_step() {
 		} break;
 
 #if 0
-		case Opcode::BNE:
-			if (regs[instr.rs1()] != regs[instr.rs2()]) {
-				pc = last_pc + instr.B_imm();
-				trap_check_pc_alignment();
-			}
-			break;
-
-		case Opcode::BLT:
-			if (regs[instr.rs1()] < regs[instr.rs2()]) {
-				pc = last_pc + instr.B_imm();
-				trap_check_pc_alignment();
-			}
-			break;
-
 		case Opcode::BGE:
 			if (regs[instr.rs1()] >= regs[instr.rs2()]) {
 				pc = last_pc + instr.B_imm();
