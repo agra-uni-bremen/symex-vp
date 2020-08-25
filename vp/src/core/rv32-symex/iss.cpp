@@ -288,14 +288,17 @@ void ISS::exec_step() {
 			regs.write(RD, link);
 		} break;
 
-#if 0
 		case Opcode::JALR: {
-			auto link = pc;
-			pc = (regs[instr.rs1()] + instr.I_imm()) & ~1;
+			auto link = PC;
+
+			auto rs1 = solver.evalValue<uint32_t>(regs[instr.rs1()]->concrete);
+			pc = (rs1 + instr.I_imm()) & ~1;
+
 			trap_check_pc_alignment();
-			regs[instr.rd()] = link;
+			regs.write(RD, link);
 		} break;
 
+#if 0
 		case Opcode::SB: {
 			uint32_t addr = regs[instr.rs1()] + instr.S_imm();
 			mem->store_byte(addr, regs[instr.rs2()]);
