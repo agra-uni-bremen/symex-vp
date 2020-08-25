@@ -119,10 +119,9 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	}
 
 
-    template <typename T>
-    inline Value _load_data(Address addr) {
+    inline Value _load_data(Address addr, size_t size) {
         auto caddr = solver.evalValue<uint32_t>(addr->concrete);
-        return sym_mem.load(v2p(caddr, LOAD), sizeof(T));
+        return sym_mem.load(v2p(caddr, LOAD), size);
     }
 
     template <typename T>
@@ -149,22 +148,22 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
     }
 
 	Value load_double(Address addr) override {
-		return _load_data<int64_t>(addr);
+		return _load_data(addr, sizeof(int64_t));
 	}
 	Value load_word(Address addr) override {
-		return _load_data<int32_t>(addr);
+		return _load_data(addr, sizeof(int32_t));
 	}
 	Value load_half(Address addr) override {
-		return _load_data<int16_t>(addr);
+		return _load_data(addr, sizeof(int16_t));
 	}
 	Value load_byte(Address addr) override {
-		return _load_data<int8_t>(addr);
+		return _load_data(addr, sizeof(int8_t));
 	}
 	Value load_uhalf(Address addr) override {
-		return _load_data<uint16_t>(addr);
+		return _load_data(addr, sizeof(uint16_t));
 	}
 	Value load_ubyte(Address addr) override {
-		return _load_data<uint8_t>(addr);
+		return _load_data(addr, sizeof(uint8_t));
 	}
 
     void store_double(uint64_t addr, uint64_t value) override {
