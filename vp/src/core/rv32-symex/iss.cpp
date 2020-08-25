@@ -194,7 +194,7 @@ void ISS::exec_step() {
 			break;
 
 		case Opcode::ADDI:
-			regs.write(RD, regs[instr.rs1()]->add(I_IMM));
+			regs.write(RD, regs[RS1]->add(I_IMM));
 			break;
 
 #if 0
@@ -220,7 +220,7 @@ void ISS::exec_step() {
 #endif
 
 		case Opcode::ADD:
-			regs.write(RD, regs[instr.rs1()]->add(regs[instr.rs2()]));
+			regs.write(RD, regs[RS1]->add(regs[RS2]));
 			break;
 
 #if 0
@@ -291,7 +291,7 @@ void ISS::exec_step() {
 		case Opcode::JALR: {
 			auto link = PC;
 
-			auto rs1 = solver.evalValue<uint32_t>(regs[instr.rs1()]->concrete);
+			auto rs1 = solver.evalValue<uint32_t>(regs[RS1]->concrete);
 			pc = (rs1 + instr.I_imm()) & ~1;
 
 			trap_check_pc_alignment();
