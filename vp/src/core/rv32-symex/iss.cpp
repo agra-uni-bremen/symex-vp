@@ -213,11 +213,13 @@ void ISS::exec_step() {
 		case Opcode::ANDI:
 			regs[instr.rd()] = regs[instr.rs1()] & instr.I_imm();
 			break;
+#endif
 
 		case Opcode::ADD:
-			regs[instr.rd()] = regs[instr.rs1()] + regs[instr.rs2()];
+			regs.write(RD, regs[instr.rs1()]->add(regs[instr.rs2()]));
 			break;
 
+#if 0
 		case Opcode::SUB:
 			regs[instr.rd()] = regs[instr.rs1()] - regs[instr.rs2()];
 			break;
