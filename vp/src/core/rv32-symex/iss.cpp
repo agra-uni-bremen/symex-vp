@@ -18,6 +18,7 @@ using namespace rv32;
 #define RS2 instr.rs2()
 #define RS3 instr.rs3()
 
+#define PC solver.BVC(std::nullopt, (uint32_t)pc)
 #define LAST_PC solver.BVC(std::nullopt, (uint32_t)last_pc)
 
 #define I_IMM solver.BVC(std::nullopt, (uint32_t)instr.I_imm())->sext(32)
@@ -280,14 +281,14 @@ void ISS::exec_step() {
 			regs.write(RD, LAST_PC->add(U_IMM));
 			break;
 
-#if 0
 		case Opcode::JAL: {
-			auto link = pc;
+			auto link = PC;
 			pc = last_pc + instr.J_imm();
 			trap_check_pc_alignment();
-			regs[instr.rd()] = link;
+			regs.write(RD, link);
 		} break;
 
+#if 0
 		case Opcode::JALR: {
 			auto link = pc;
 			pc = (regs[instr.rs1()] + instr.I_imm()) & ~1;
