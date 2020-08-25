@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <clover/clover.h>
 
 namespace rv32 {
 
@@ -12,16 +13,19 @@ struct instr_memory_if {
 
 //NOTE: load/store double is used for floating point D extension
 struct data_memory_if {
+	typedef std::shared_ptr<clover::ConcolicValue> Address;
+	typedef std::shared_ptr<clover::ConcolicValue> Value;
+
 	virtual ~data_memory_if() {}
 
-    virtual int64_t load_double(uint64_t addr) = 0;
-	virtual int32_t load_word(uint64_t addr) = 0;
-	virtual int32_t load_half(uint64_t addr) = 0;
-	virtual int32_t load_byte(uint64_t addr) = 0;
-	virtual uint32_t load_uhalf(uint64_t addr) = 0;
-	virtual uint32_t load_ubyte(uint64_t addr) = 0;
+	virtual Value load_double(Address addr) = 0;
+	virtual Value load_word(Address addr) = 0;
+	virtual Value load_half(Address addr) = 0;
+	virtual Value load_byte(Address addr) = 0;
+	virtual Value load_uhalf(Address addr) = 0;
+	virtual Value load_ubyte(Address addr) = 0;
 
-    virtual void store_double(uint64_t addr, uint64_t value) = 0;
+	virtual void store_double(uint64_t addr, uint64_t value) = 0;
 	virtual void store_word(uint64_t addr, uint32_t value) = 0;
 	virtual void store_half(uint64_t addr, uint16_t value) = 0;
 	virtual void store_byte(uint64_t addr, uint8_t value) = 0;

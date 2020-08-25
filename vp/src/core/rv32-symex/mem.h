@@ -4,6 +4,8 @@
 #include "iss.h"
 #include "mmu.h"
 
+#include <clover/clover.h>
+
 namespace rv32 {
 
 /* For optimization, use DMI to fetch instructions */
@@ -26,7 +28,10 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
                                  public instr_memory_if,
                                  public data_memory_if,
                                  public mmu_memory_if  {
+
 	ISS &iss;
+	clover::Solver &solver;
+	clover::ConcolicMemory sym_mem;
 	std::shared_ptr<bus_lock_if> bus_lock;
 	uint64_t lr_addr = 0;
 
@@ -41,7 +46,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
     MMU *mmu;
 
 	CombinedMemoryInterface(sc_core::sc_module_name, ISS &owner, MMU *mmu = nullptr)
-	    : iss(owner), quantum_keeper(iss.quantum_keeper), mmu(mmu) {
+	    : iss(owner), solver(owner.solver), sym_mem(owner.solver), quantum_keeper(iss.quantum_keeper), mmu(mmu) {
 	}
 
     uint64_t v2p(uint64_t vaddr, MemoryAccessType type) {
@@ -115,8 +120,9 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 
 
     template <typename T>
-    inline T _load_data(uint64_t addr) {
-        return _raw_load_data<T>(v2p(addr, LOAD));
+    inline Value _load_data(Address addr) {
+        auto caddr = solver.evalValue<uint32_t>(addr->concrete);
+        return sym_mem.load(v2p(caddr, LOAD), sizeof(T));
     }
 
     template <typename T>
@@ -142,22 +148,22 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
         return _raw_load_data<uint32_t>(v2p(addr, FETCH));
     }
 
-    int64_t load_double(uint64_t addr) override {
-        return _load_data<int64_t>(addr);
-    }
-	int32_t load_word(uint64_t addr) override {
+	Value load_double(Address addr) override {
+		return _load_data<int64_t>(addr);
+	}
+	Value load_word(Address addr) override {
 		return _load_data<int32_t>(addr);
 	}
-	int32_t load_half(uint64_t addr) override {
+	Value load_half(Address addr) override {
 		return _load_data<int16_t>(addr);
 	}
-	int32_t load_byte(uint64_t addr) override {
+	Value load_byte(Address addr) override {
 		return _load_data<int8_t>(addr);
 	}
-	uint32_t load_uhalf(uint64_t addr) override {
+	Value load_uhalf(Address addr) override {
 		return _load_data<uint16_t>(addr);
 	}
-	uint32_t load_ubyte(uint64_t addr) override {
+	Value load_ubyte(Address addr) override {
 		return _load_data<uint8_t>(addr);
 	}
 
