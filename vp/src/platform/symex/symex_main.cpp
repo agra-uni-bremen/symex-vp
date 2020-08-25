@@ -63,7 +63,8 @@ int sc_main(int argc, char **argv) {
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
 	clover::Solver solver;
-	ISS core(solver, 0, opt.use_E_base_isa);
+	clover::Trace tracer;
+	ISS core(solver, tracer, 0, opt.use_E_base_isa);
     MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SimpleMemory mem("SimpleMemory", opt.mem_size);
