@@ -272,9 +272,10 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	}
 
 	template <unsigned Alignment, bool isLoad>
-	inline void trap_check_addr_alignment(uint32_t addr) {
-		if (unlikely(addr % Alignment)) {
-			raise_trap(isLoad ? EXC_LOAD_ADDR_MISALIGNED : EXC_STORE_AMO_ADDR_MISALIGNED, addr);
+	inline void trap_check_addr_alignment(std::shared_ptr<clover::ConcolicValue> addr) {
+		auto caddr = solver.evalValue<uint32_t>(addr->concrete);
+		if (unlikely(caddr % Alignment)) {
+			raise_trap(isLoad ? EXC_LOAD_ADDR_MISALIGNED : EXC_STORE_AMO_ADDR_MISALIGNED, caddr);
 		}
 	}
 
