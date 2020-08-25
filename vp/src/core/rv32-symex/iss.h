@@ -218,12 +218,11 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	unsigned get_syscall_register_index() override;
 	uint64_t read_register(unsigned idx) override;
 	void write_register(unsigned idx, uint64_t value) override;
-	void write_register(unsigned idx, RegFile::RegValue value) override;
 
     std::vector<uint64_t> get_registers(void) override;
 
-    clover::ExecutionContext &getContext(void) override {
-        return ctx;
+    void make_symbolic(size_t index) override {
+        regs.write(index, ctx.getSymbolic(index));
     }
 
     Architecture get_architecture(void) override {

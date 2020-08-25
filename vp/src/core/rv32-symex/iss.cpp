@@ -1486,11 +1486,7 @@ uint64_t ISS::read_register(unsigned idx) {
 void ISS::write_register(unsigned idx, uint64_t value) {
 	assert(value <= UINT32_MAX);
 	auto reg = solver.BVC(std::nullopt, (uint32_t)value);
-	this->write_register(idx, reg);
-}
-
-void ISS::write_register(unsigned idx, RegFile::RegValue value) {
-	regs.write(idx, value);
+	regs.write(idx, reg);
 }
 
 uint64_t ISS::get_progam_counter(void) {

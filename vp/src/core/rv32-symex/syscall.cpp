@@ -203,8 +203,7 @@ int sys_sym_reg(iss_syscall_if *core, uint64_t index) {
 	if (index >= 32)
 		return -1;
 
-	auto ctx = core->getContext();
-	core->write_register(index, ctx.getSymbolic(index));
+	core->make_symbolic(index);
 	return 0;
 }
 

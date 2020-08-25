@@ -17,8 +17,7 @@ struct iss_syscall_if {
 	virtual uint64_t read_register(unsigned idx) = 0;
 	virtual void write_register(unsigned idx, uint64_t value) = 0;
 
-	virtual clover::ExecutionContext &getContext(void) = 0;
-	virtual void write_register(unsigned idx, std::shared_ptr<clover::ConcolicValue> value) = 0;
+	virtual void make_symbolic(size_t index) = 0;
 
 	// virtual uint32_t get_hart_id() = 0;
 };
