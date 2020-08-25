@@ -38,31 +38,35 @@ int regcolors[] = {
 };
 
 RegFile::RegFile(clover::Solver &_solver) : solver(_solver) {
-	memset(regs, 0, sizeof(regs));
+	for (size_t i = 0; i < regs.size(); i++)
+		regs[i] = solver.BVC(std::nullopt, (uint32_t)0);
 }
 
 RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver) {
-	memcpy(regs, other.regs, sizeof(regs));
+	for (size_t i = 0; i < regs.size(); i++)
+		regs[i] = other.regs[i];
 }
 
-void RegFile::write(uint32_t index, int32_t value) {
+void RegFile::write(uint32_t index, RegFile::RegValue value) {
 	assert(index <= x31);
 	assert(index != x0);
 	regs[index] = value;
 }
 
-int32_t RegFile::read(uint32_t index) {
+RegFile::RegValue RegFile::read(uint32_t index) {
 	if (index > x31)
 		throw std::out_of_range("out-of-range register access");
 	return regs[index];
 }
 
+#if 0
 uint32_t RegFile::shamt(uint32_t index) {
 	assert(index <= x31);
 	return BIT_RANGE(regs[index], 4, 0);
 }
+#endif
 
-int32_t &RegFile::operator[](const uint32_t idx) {
+const RegFile::RegValue &RegFile::operator[](const uint32_t idx) {
 	return regs[idx];
 }
 
@@ -75,8 +79,15 @@ int32_t &RegFile::operator[](const uint32_t idx) {
 #endif
 
 void RegFile::show() {
-	for (unsigned i = 0; i < NUM_REGS; ++i) {
-		printf(COLORFRMT " = %8x\n", COLORPRINT(regcolors[i], regnames[i]), regs[i]);
+	for (size_t i = 0; i < regs.size(); i++) {
+		std::string bvs = "none";
+		if (regs[i]->symbolic.has_value()) {
+			auto v = solver.evalValue<uint32_t>(*regs[i]->symbolic);
+			bvs = std::to_string(v);
+		}
+
+		uint32_t bvv = solver.evalValue<uint32_t>(regs[i]->concrete);
+		printf("r[%zu] = (%s, %" PRIu32 ")\n", i, bvs.c_str(), bvv);
 	}
 }
 
@@ -1427,7 +1438,7 @@ void ISS::init(instr_memory_if *instr_mem, data_memory_if *data_mem, clint_if *c
 	this->instr_mem = instr_mem;
 	this->mem = data_mem;
 	this->clint = clint;
-	regs[RegFile::sp] = sp;
+	regs.write(RegFile::sp, solver.BVC(std::nullopt, (uint32_t)sp));
 	pc = entrypoint;
 }
 
@@ -1444,11 +1455,14 @@ unsigned ISS::get_syscall_register_index() {
 
 
 uint64_t ISS::read_register(unsigned idx) {
-	return (uint32_t)regs.read(idx);    //NOTE: zero extend
+	auto reg = regs.read(idx);
+	return solver.evalValue<uint32_t>(reg->concrete);
 }
 
 void ISS::write_register(unsigned idx, uint64_t value) {
-	regs.write(idx, boost::lexical_cast<uint32_t>(value));
+	assert(value <= UINT32_MAX);
+	auto reg = solver.BVC(std::nullopt, (uint32_t)value);
+	regs.write(idx, reg);
 }
 
 uint64_t ISS::get_progam_counter(void) {
@@ -1486,8 +1500,10 @@ uint64_t ISS::get_hart_id() {
 std::vector<uint64_t> ISS::get_registers(void) {
     std::vector<uint64_t> regvals;
 
-    for (auto v : regs.regs)
-        regvals.push_back((uint32_t)v); //NOTE: zero extend
+    for (auto v : regs.regs) {
+        auto regval = solver.evalValue<uint32_t>(v->concrete);
+        regvals.push_back(regval);
+    }
 
     return regvals;
 }

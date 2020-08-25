@@ -35,19 +35,22 @@ struct RegFile {
 	clover::Solver &solver;
 	static constexpr unsigned NUM_REGS = 32;
 
-	int32_t regs[NUM_REGS];
+	typedef std::shared_ptr<clover::ConcolicValue> RegValue;
+	std::array<RegValue, NUM_REGS> regs;
 
 	RegFile(clover::Solver &_solver);
 
 	RegFile(clover::Solver &_solver, const RegFile &other);
 
-	void write(uint32_t index, int32_t value);
+	void write(uint32_t index, RegValue value);
 
-	int32_t read(uint32_t index);
+	RegFile::RegValue read(uint32_t index);
 
+#if 0
 	uint32_t shamt(uint32_t index);
+#endif
 
-	int32_t &operator[](const uint32_t idx);
+	const RegValue &operator[](const uint32_t idx);
 
 	void show();
 
