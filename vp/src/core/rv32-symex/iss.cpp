@@ -137,6 +137,7 @@ void ISS::exec_step() {
 		pc += 4;
 	}
 
+#if 0
 	if (trace) {
 		printf("core %2u: prv %1x: pc %8x: %s ", csrs.mhartid.reg, prv, last_pc, Opcode::mappingStr[op]);
 		switch (Opcode::getType(op)) {
@@ -1164,6 +1165,7 @@ void ISS::exec_step() {
 		default:
 			throw std::runtime_error("unknown opcode");
 	}
+#endif
 }
 
 uint64_t ISS::_compute_and_get_current_cycles() {

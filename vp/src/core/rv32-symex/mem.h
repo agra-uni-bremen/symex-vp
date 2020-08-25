@@ -174,6 +174,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		_store_data(addr, value);
 	}
 
+#if 0
 	virtual int32_t atomic_load_word(uint64_t addr) override {
 		bus_lock->lock(iss.get_hart_id());
 		return load_word(addr);
@@ -203,6 +204,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	virtual void atomic_unlock() override {
 		bus_lock->unlock(iss.get_hart_id());
 	}
+#endif
 };
 
 }  // namespace rv32
