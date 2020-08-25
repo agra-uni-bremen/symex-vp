@@ -199,6 +199,15 @@ int sys_close(int fd) {
 	}
 }
 
+int sys_sym_reg(iss_syscall_if *core, uint64_t index) {
+	if (index >= 32)
+		return -1;
+
+	auto ctx = core->getContext();
+	core->write_register(index, ctx.getSymbolic(index));
+	return 0;
+}
+
 // TODO: add support for additional syscalls if necessary
 int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t) {
 	// NOTE: when linking with CRT, the most basic example only calls *gettimeofday* and finally *exit*
@@ -230,6 +239,9 @@ int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint
 
 		case SYS_close:
 			return sys_close(_a0);
+
+		case SYS_sym_reg:
+			return sys_sym_reg(cores.at(n), _a0);
 
 		case SYS_exit:
 			shall_exit = true;

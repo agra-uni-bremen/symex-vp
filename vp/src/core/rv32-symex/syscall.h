@@ -11,6 +11,7 @@
 
 #define SYS_exit 93
 #define SYS_exit_group 94
+#define SYS_sym_reg 95
 #define SYS_getpid 172
 #define SYS_kill 129
 #define SYS_read 63
@@ -57,6 +58,7 @@
 #define SYS_host_test_pass 2  // RISC-V test execution successfully completed
 #define SYS_host_test_fail 3  // RISC-V test execution failed
 
+#include <clover/clover.h>
 #include <tlm_utils/simple_target_socket.h>
 #include <systemc>
 
