@@ -273,19 +273,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	}
 
 	inline void execute_amo(Instruction &instr, std::function<int32_t(int32_t, int32_t)> operation) {
-		uint32_t addr = regs[instr.rs1()];
-		trap_check_addr_alignment<4, false>(addr);
-		uint32_t data;
-		try {
-			data = mem->atomic_load_word(addr);
-		} catch (SimulationTrap &e) {
-			if (e.reason == EXC_LOAD_ACCESS_FAULT)
-				e.reason = EXC_STORE_AMO_ACCESS_FAULT;
-			throw e;
-		}
-		uint32_t val = operation(data, regs[instr.rs2()]);
-		mem->atomic_store_word(addr, val);
-		regs[instr.rd()] = data;
+		throw std::string(__func__) + " not implemented";
 	}
 
 	inline bool m_mode() {
