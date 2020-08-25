@@ -124,9 +124,9 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
         return sym_mem.load(v2p(caddr, LOAD), size);
     }
 
-    template <typename T>
-    inline void _store_data(uint64_t addr, T value) {
-        _raw_store_data(v2p(addr, STORE), value);
+    inline void _store_data(Address addr, Value value, size_t size) {
+        auto caddr = solver.evalValue<uint32_t>(addr->concrete);
+        sym_mem.store(v2p(caddr, STORE), value, size);
     }
 
     uint64_t mmu_load_pte64(uint64_t addr) override {
@@ -166,17 +166,17 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		return _load_data(addr, sizeof(uint8_t));
 	}
 
-    void store_double(uint64_t addr, uint64_t value) override {
-        _store_data(addr, value);
-    }
-	void store_word(uint64_t addr, uint32_t value) override {
-		_store_data(addr, value);
+	void store_double(Address addr, Value value) override {
+		_store_data(addr, value->sext(64), sizeof(uint64_t));
 	}
-	void store_half(uint64_t addr, uint16_t value) override {
-		_store_data(addr, value);
+	void store_word(Address addr, Value value) override {
+		_store_data(addr, value->sext(32), sizeof(uint32_t));
 	}
-	void store_byte(uint64_t addr, uint8_t value) override {
-		_store_data(addr, value);
+	void store_half(Address addr, Value value) override {
+		_store_data(addr, value->sext(16), sizeof(uint16_t));
+	}
+	void store_byte(Address addr, Value value) override {
+		_store_data(addr, value->sext(8), sizeof(uint8_t));
 	}
 
 	virtual int32_t atomic_load_word(uint64_t addr) override {

@@ -25,10 +25,10 @@ struct data_memory_if {
 	virtual Value load_uhalf(Address addr) = 0;
 	virtual Value load_ubyte(Address addr) = 0;
 
-	virtual void store_double(uint64_t addr, uint64_t value) = 0;
-	virtual void store_word(uint64_t addr, uint32_t value) = 0;
-	virtual void store_half(uint64_t addr, uint16_t value) = 0;
-	virtual void store_byte(uint64_t addr, uint8_t value) = 0;
+	virtual void store_double(Address addr, Value value) = 0;
+	virtual void store_word(Address addr, Value value) = 0;
+	virtual void store_half(Address addr, Value value) = 0;
+	virtual void store_byte(Address addr, Value value) = 0;
 
 	virtual int32_t atomic_load_word(uint64_t addr) = 0;
 	virtual void atomic_store_word(uint64_t addr, uint32_t value) = 0;
