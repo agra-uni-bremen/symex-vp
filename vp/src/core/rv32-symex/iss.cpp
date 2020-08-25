@@ -18,6 +18,8 @@ using namespace rv32;
 #define RS2 instr.rs2()
 #define RS3 instr.rs3()
 
+#define I_IMM solver.BVC(std::nullopt, (uint32_t)instr.I_imm())->sext(32)
+
 const char *regnames[] = {
     "zero (x0)", "ra   (x1)", "sp   (x2)", "gp   (x3)", "tp   (x4)", "t0   (x5)", "t1   (x6)", "t2   (x7)",
     "s0/fp(x8)", "s1   (x9)", "a0  (x10)", "a1  (x11)", "a2  (x12)", "a3  (x13)", "a4  (x14)", "a5  (x15)",
@@ -187,11 +189,11 @@ void ISS::exec_step() {
 			raise_trap(EXC_ILLEGAL_INSTR, instr.data());
 			break;
 
-#if 0
 		case Opcode::ADDI:
-			regs[instr.rd()] = regs[instr.rs1()] + instr.I_imm();
+			regs.write(RD, regs[instr.rs1()]->add(I_IMM));
 			break;
 
+#if 0
 		case Opcode::SLTI:
 			regs[instr.rd()] = regs[instr.rs1()] < instr.I_imm();
 			break;
