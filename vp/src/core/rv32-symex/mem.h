@@ -124,7 +124,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
         return sym_mem.load(v2p(caddr, LOAD), size);
     }
 
-    inline void _store_data(Address addr, Value value, size_t size) {
+    inline void _store_data(Address addr, Value value, size_t size) override {
         auto caddr = solver.evalValue<uint32_t>(addr->concrete);
         sym_mem.store(v2p(caddr, STORE), value, size);
     }

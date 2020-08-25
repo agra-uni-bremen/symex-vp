@@ -18,6 +18,7 @@ struct iss_syscall_if {
 	virtual void write_register(unsigned idx, uint64_t value) = 0;
 
 	virtual void make_symbolic(size_t index) = 0;
+	virtual void make_symbolic(uint32_t addr, size_t size) = 0;
 
 	// virtual uint32_t get_hart_id() = 0;
 };

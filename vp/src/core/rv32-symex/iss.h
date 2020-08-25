@@ -225,6 +225,13 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
         regs.write(index, ctx.getSymbolic(index));
     }
 
+    void make_symbolic(uint32_t addr, size_t size) override {
+        auto saddr = solver.BVC(std::nullopt, addr);
+        auto value = ctx.getSymbolic(addr, size);
+
+        mem->_store_data(saddr, value, size);
+    }
+
     Architecture get_architecture(void) override {
         return RV32;
     }

@@ -25,6 +25,8 @@ struct data_memory_if {
 	virtual Value load_uhalf(Address addr) = 0;
 	virtual Value load_ubyte(Address addr) = 0;
 
+	virtual void _store_data(Address addr, Value value, size_t size) = 0;
+
 	virtual void store_double(Address addr, Value value) = 0;
 	virtual void store_word(Address addr, Value value) = 0;
 	virtual void store_half(Address addr, Value value) = 0;
