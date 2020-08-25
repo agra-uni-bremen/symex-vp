@@ -97,7 +97,8 @@ void RegFile::show() {
 	}
 }
 
-ISS::ISS(clover::Solver &_solver, clover::Trace &_tracer, uint32_t hart_id, bool use_E_base_isa) : solver(_solver), tracer(_tracer), regs(_solver), systemc_name("Core-" + std::to_string(hart_id)) {
+ISS::ISS(clover::Solver &_solver, clover::ExecutionContext &_ctx, clover::Trace &_tracer, uint32_t hart_id, bool use_E_base_isa)
+  : solver(_solver), ctx(_ctx), tracer(_tracer), regs(_solver), systemc_name("Core-" + std::to_string(hart_id)) {
 	csrs.mhartid.reg = hart_id;
 	if (use_E_base_isa)
 		csrs.misa.select_E_base_isa();

@@ -159,6 +159,7 @@ struct PendingInterrupts {
 
 struct ISS : public external_interrupt_target, public clint_interrupt_target, public iss_syscall_if, public debug_target_if {
 	clover::Solver &solver;
+	clover::ExecutionContext &ctx;
 	clover::Trace &tracer;
 
 	clint_if *clint = nullptr;
@@ -196,7 +197,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	static constexpr int32_t REG_MIN = INT32_MIN;
     static constexpr unsigned xlen = 32;
 
-	ISS(clover::Solver &_solver, clover::Trace &_tracer, uint32_t hart_id, bool use_E_base_isa = false);
+	ISS(clover::Solver &_solver, clover::ExecutionContext &_ctx, clover::Trace &_tracer, uint32_t hart_id, bool use_E_base_isa = false);
 
 	void exec_step();
 
