@@ -343,14 +343,16 @@ void ISS::exec_step() {
 			trap_check_addr_alignment<2, true>(addr);
 			regs[instr.rd()] = mem->load_uhalf(addr);
 		} break;
+#endif
 
-		case Opcode::BEQ:
-			if (regs[instr.rs1()] == regs[instr.rs2()]) {
+		case Opcode::BEQ: {
+			auto res = regs[RS1]->slt(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond)
 				pc = last_pc + instr.B_imm();
-				trap_check_pc_alignment();
-			}
-			break;
+		} break;
 
+#if 0
 		case Opcode::BNE:
 			if (regs[instr.rs1()] != regs[instr.rs2()]) {
 				pc = last_pc + instr.B_imm();
