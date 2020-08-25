@@ -350,6 +350,9 @@ void ISS::exec_step() {
 			bool cond = solver.eval(res->concrete);
 			if (cond)
 				pc = last_pc + instr.B_imm();
+
+			if (res->symbolic.has_value())
+				tracer.add(cond, *res->symbolic);
 		} break;
 
 #if 0
