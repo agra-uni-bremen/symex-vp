@@ -179,7 +179,6 @@ void ISS::exec_step() {
 		puts("");
 	}
 
-#if 0
 	switch (op) {
 		case Opcode::UNDEF:
 			if (trace)
@@ -188,6 +187,7 @@ void ISS::exec_step() {
 			raise_trap(EXC_ILLEGAL_INSTR, instr.data());
 			break;
 
+#if 0
 		case Opcode::ADDI:
 			regs[instr.rd()] = regs[instr.rs1()] + instr.I_imm();
 			break;
@@ -1173,10 +1173,10 @@ void ISS::exec_step() {
         case Opcode::FMV_D_X:
             RAISE_ILLEGAL_INSTRUCTION();
 
+#endif
 		default:
 			throw std::runtime_error("unknown opcode");
 	}
-#endif
 }
 
 uint64_t ISS::_compute_and_get_current_cycles() {
