@@ -8,4 +8,7 @@ subdirs(tiny64-mc)
 subdirs(test32)
 subdirs(linux)
 subdirs(linux32)
-subdirs(symex)
+
+if(SYMEX_BACKEND)
+	subdirs(symex)
+endif()

@@ -2,4 +2,6 @@ subdirs(common)
 subdirs(rv32)
 subdirs(rv64)
 
-subdirs(rv32-symex)
+if(SYMEX_BACKEND)
+	subdirs(rv32-symex)
+endif()

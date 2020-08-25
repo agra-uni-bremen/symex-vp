@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(riscv-vp)
 
 option(USE_SYSTEM_SYSTEMC "use systemc version provided by the system" OFF)
+option(SYMEX_BACKEND "enable symbolic execution backend (requires KLEE)" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -18,24 +19,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-
-find_package(Boost REQUIRED COMPONENTS iostreams program_options)
-
-find_package(ZLIB REQUIRED)
-find_package(STP  REQUIRED)
-find_package(LLVM REQUIRED)
-find_package(Z3   REQUIRED)
-find_package(KLEE REQUIRED)
-
-include_directories(
-	${Z3_INCLUDE_DIRS}
-	${STP_INCLUDE_DIRS}
-	${LLVM_INCLUDE_DIRS}
-	${KLEE_INCLUDE_DIRS})
-link_directories(
-	${Z3_LIBRARY_DIR}
-	${STP_LIBRARY_DIR}
-	${KLEE_LIBRARY_DIR})
 
 find_package( Boost REQUIRED COMPONENTS iostreams program_options log)
 
