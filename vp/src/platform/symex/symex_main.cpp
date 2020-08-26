@@ -49,7 +49,10 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 	sim_tracer = tracer;
 	sim_ctx = ctx;
 
+	size_t paths_found = 0;
 	do {
+		printf("\n##\n# %zunth concolic execution\n##\n", ++paths_found);
+
 		// TODO: Reset memory too.
 		sim_tracer->reset();
 
@@ -58,6 +61,7 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 			return ret;
 	} while (ctx->hasNewPath(*sim_tracer));
 
+	printf("\n---\nUnique paths found: %zu\n", paths_found);
 	return 0;
 }
 
