@@ -56,7 +56,6 @@ RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver
 
 void RegFile::write(uint32_t index, RegFile::RegValue value) {
 	assert(index <= x31);
-	assert(index != x0);
 	regs[index] = value;
 }
 
