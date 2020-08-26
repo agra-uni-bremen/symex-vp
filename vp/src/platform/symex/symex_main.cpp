@@ -19,15 +19,9 @@
 #include <iomanip>
 #include <iostream>
 
-#include <err.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
 static clover::Solver *sim_solver = NULL;
 static clover::Trace *sim_tracer = NULL;
+static clover::ExecutionContext *sim_ctx = NULL;
 
 using namespace rv32;
 namespace po = boost::program_options;
@@ -65,33 +59,22 @@ public:
 };
 
 int
-run_simulation(clover::Solver *solver, clover::Trace *tracer, int argc, char **argv)
+run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionContext *ctx, int argc, char **argv)
 {
-	pid_t pid;
-	int ret, wstatus;
+	int ret;
 
-	switch ((pid = fork())) {
-	case -1:
-		err(EXIT_FAILURE, "fork failed");
-	case 0:
-		sim_solver = solver;
-		sim_tracer = tracer;
+	sim_solver = solver;
+	sim_tracer = tracer;
+	sim_ctx = ctx;
 
+	do {
 		// TODO: Reset memory too.
 		sim_tracer->reset();
 
 		sc_core::sc_curr_simcontext = NULL;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
-
-		return run_simulation(sim_solver, sim_tracer, argc, argv);
-	default:
-		if (waitpid(pid, &wstatus, 0) == -1)
-			err(EXIT_FAILURE, "waitpid failed");
-
-		ret = WEXITSTATUS(wstatus);
-		printf("Child %u exited with status %d\n", (unsigned)pid, ret);
-	}
+	} while (ctx->hasNewPath(*sim_tracer));
 
 	return 0;
 }
@@ -101,8 +84,9 @@ main(int argc, char **argv)
 {
 	clover::Solver solver;
 	clover::Trace tracer;
+	clover::ExecutionContext ctx(solver);
 
-	return run_simulation(&solver, &tracer, argc, argv);
+	return run_simulation(&solver, &tracer, &ctx, argc, argv);
 }
 
 int sc_main(int argc, char **argv) {
@@ -113,9 +97,7 @@ int sc_main(int argc, char **argv) {
 
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	clover::ExecutionContext ctx(*sim_solver);
-
-	ISS core(*sim_solver, ctx, *sim_tracer, 0, opt.use_E_base_isa);
+	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0, opt.use_E_base_isa);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SimpleMemory mem("SimpleMemory", opt.mem_size);
@@ -182,9 +164,6 @@ int sc_main(int argc, char **argv) {
 	if (!opt.quiet) {
 		core.show();
 	}
-
-	if (!ctx.hasNewPath(*sim_tracer))
-		return 42;
 
 	return 0;
 }
