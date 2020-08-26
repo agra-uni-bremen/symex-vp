@@ -400,6 +400,7 @@ void ISS::exec_step() {
 		case Opcode::FENCE_I: {
 			// not using out of order execution so can be ignored
 		} break;
+#endif
 
 		case Opcode::ECALL: {
 			if (sys) {
@@ -421,6 +422,7 @@ void ISS::exec_step() {
 			}
 		} break;
 
+#if 0
 		case Opcode::EBREAK: {
 			// TODO: also raise trap and let the SW deal with it?
 			status = CoreExecStatus::HitBreakpoint;
