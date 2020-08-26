@@ -400,12 +400,10 @@ void ISS::exec_step() {
 				tracer.add(cond, *res->symbolic);
 		} break;
 
-#if 0
 		case Opcode::FENCE:
 		case Opcode::FENCE_I: {
 			// not using out of order execution so can be ignored
 		} break;
-#endif
 
 		case Opcode::ECALL: {
 			if (sys) {
