@@ -213,7 +213,7 @@ int sys_sym_mem(iss_syscall_if *core, uint64_t addr, uint64_t size) {
 }
 
 // TODO: add support for additional syscalls if necessary
-int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t) {
+int SyscallHandler::execute_syscall(iss_syscall_if *core, uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t) {
 	// NOTE: when linking with CRT, the most basic example only calls *gettimeofday* and finally *exit*
 
 	switch (n) {
@@ -245,10 +245,10 @@ int SyscallHandler::execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint
 			return sys_close(_a0);
 
 		case SYS_sym_reg:
-			return sys_sym_reg(cores.at(n), _a0);
+			return sys_sym_reg(core, _a0);
 
 		case SYS_sym_mem:
-			return sys_sym_mem(cores.at(n), _a0, _a1);
+			return sys_sym_mem(core, _a0, _a1);
 
 		case SYS_exit:
 			shall_exit = true;

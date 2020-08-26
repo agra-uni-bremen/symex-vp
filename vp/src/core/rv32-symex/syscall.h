@@ -103,7 +103,7 @@ struct SyscallHandler : public sc_core::sc_module, syscall_emulator_if {
 
 		// printf("a7=%u, a0=%u, a1=%u, a2=%u, a3=%u\n", a7, a0, a1, a2, a3);
 
-		auto ans = execute_syscall(syscall, a0, a1, a2, a3);
+		auto ans = execute_syscall(core, syscall, a0, a1, a2, a3);
 
 		core->write_register(RegFile::a0, boost::lexical_cast<int32_t>(ans));
 
@@ -150,7 +150,7 @@ struct SyscallHandler : public sc_core::sc_module, syscall_emulator_if {
 	 * host as byte array). Note: the data structures on the host system might
 	 * not be binary compatible with those on the guest system.
 	 */
-	int execute_syscall(uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t _a3);
+	int execute_syscall(iss_syscall_if *core, uint64_t n, uint64_t _a0, uint64_t _a1, uint64_t _a2, uint64_t _a3);
 };
 
 }  // namespace rv32
