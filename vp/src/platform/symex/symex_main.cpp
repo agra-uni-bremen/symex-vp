@@ -72,6 +72,9 @@ main(int argc, char **argv)
 	clover::Trace tracer;
 	clover::ExecutionContext ctx(solver);
 
+	// Hide SystemC copyright message
+	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
+
 	return run_simulation(&solver, &tracer, &ctx, argc, argv);
 }
 
