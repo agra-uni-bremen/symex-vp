@@ -388,14 +388,19 @@ void ISS::exec_step() {
 				trap_check_pc_alignment();
 			}
 			break;
+#endif
 
-		case Opcode::BGEU:
-			if ((uint32_t)regs[instr.rs1()] >= (uint32_t)regs[instr.rs2()]) {
+		case Opcode::BGEU: {
+			auto res = regs[RS1]->uge(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond)
 				pc = last_pc + instr.B_imm();
-				trap_check_pc_alignment();
-			}
-			break;
 
+			if (res->symbolic.has_value())
+				tracer.add(cond, *res->symbolic);
+		} break;
+
+#if 0
 		case Opcode::FENCE:
 		case Opcode::FENCE_I: {
 			// not using out of order execution so can be ignored
