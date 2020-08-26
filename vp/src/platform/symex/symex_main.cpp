@@ -77,6 +77,9 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, int argc, char **a
 		sim_solver = solver;
 		sim_tracer = tracer;
 
+		// TODO: Reset memory too.
+		sim_tracer->reset();
+
 		sc_core::sc_curr_simcontext = NULL;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
