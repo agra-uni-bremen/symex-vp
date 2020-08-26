@@ -1852,7 +1852,7 @@ void ISS::performance_and_sync_update(Opcode::Mapping executed_op) {
 }
 
 void ISS::run_step() {
-	assert(regs.read(0) == 0);
+	assert(solver.evalValue<uint32_t>(regs.read(0)->concrete) == 0);
 
 	// speeds up the execution performance (non debug mode) significantly by
 	// checking the additional flag first
