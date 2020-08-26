@@ -26,7 +26,7 @@ static clover::ExecutionContext *sim_ctx = NULL;
 using namespace rv32;
 namespace po = boost::program_options;
 
-struct TinyOptions : public Options {
+struct SymexOptions : public Options {
 public:
 	typedef unsigned int addr_t;
 
@@ -38,24 +38,6 @@ public:
 	addr_t clint_end_addr = 0x0200ffff;
 	addr_t sys_start_addr = 0x02010000;
 	addr_t sys_end_addr = 0x020103ff;
-
-	bool quiet = false;
-	bool use_E_base_isa = false;
-
-	TinyOptions(void) {
-		// clang-format off
-		add_options()
-			("quiet", po::bool_switch(&quiet), "do not output register values on exit")
-			("memory-start", po::value<unsigned int>(&mem_start_addr), "set memory start address")
-			("memory-size", po::value<unsigned int>(&mem_size), "set memory size")
-			("use-E-base-isa", po::bool_switch(&use_E_base_isa), "use the E instead of the I integer base ISA");
-        	// clang-format on
-        }
-
-	void parse(int argc, char **argv) override {
-		Options::parse(argc, argv);
-		mem_end_addr = mem_start_addr + mem_size - 1;
-	}
 };
 
 int
@@ -90,14 +72,14 @@ main(int argc, char **argv)
 }
 
 int sc_main(int argc, char **argv) {
-	TinyOptions opt;
+	SymexOptions opt;
 	opt.parse(argc, argv);
 
 	std::srand(std::time(nullptr));  // use current time as seed for random generator
 
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0, opt.use_E_base_isa);
+	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SimpleMemory mem("SimpleMemory", opt.mem_size);
@@ -157,13 +139,8 @@ int sc_main(int argc, char **argv) {
 		new DirectCoreRunner(core);
 	}
 
-	if (opt.quiet)
-		 sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_NONE);
-
 	sc_core::sc_start();
-	if (!opt.quiet) {
-		core.show();
-	}
+	core.show();
 
 	return 0;
 }
