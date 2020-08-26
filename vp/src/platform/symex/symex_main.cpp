@@ -77,8 +77,10 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, int argc, char **a
 		sim_solver = solver;
 		sim_tracer = tracer;
 
+		sc_core::sc_curr_simcontext = NULL;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
+
 		return run_simulation(sim_solver, sim_tracer, argc, argv);
 	default:
 		if (waitpid(pid, &wstatus, 0) == -1)
