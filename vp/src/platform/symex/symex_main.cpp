@@ -19,6 +19,15 @@
 #include <iomanip>
 #include <iostream>
 
+#include <err.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+static clover::Trace *sim_tracer = NULL;
+
 using namespace rv32;
 namespace po = boost::program_options;
 
@@ -54,6 +63,39 @@ public:
 	}
 };
 
+int
+run_simulation(clover::Trace *tracer, int argc, char **argv)
+{
+	pid_t pid;
+	int ret, wstatus;
+
+	switch ((pid = fork())) {
+	case -1:
+		err(EXIT_FAILURE, "fork failed");
+	case 0:
+		sim_tracer = tracer;
+		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
+			return ret;
+		return run_simulation(sim_tracer, argc, argv);
+	default:
+		if (waitpid(pid, &wstatus, 0) == -1)
+			err(EXIT_FAILURE, "waitpid failed");
+
+		ret = WEXITSTATUS(wstatus);
+		printf("Child %u exited with status %d\n", (unsigned)pid, ret);
+	}
+
+	return 0;
+}
+
+int
+main(int argc, char **argv)
+{
+	clover::Trace tracer;
+
+	return run_simulation(&tracer, argc, argv);
+}
+
 int sc_main(int argc, char **argv) {
 	TinyOptions opt;
 	opt.parse(argc, argv);
@@ -64,9 +106,9 @@ int sc_main(int argc, char **argv) {
 
 	clover::Solver solver;
 	clover::ExecutionContext ctx(solver);
-	clover::Trace tracer;
-	ISS core(solver, ctx, tracer, 0, opt.use_E_base_isa);
-    MMU mmu(core);
+
+	ISS core(solver, ctx, *sim_tracer, 0, opt.use_E_base_isa);
+	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SimpleMemory mem("SimpleMemory", opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
@@ -132,6 +174,9 @@ int sc_main(int argc, char **argv) {
 	if (!opt.quiet) {
 		core.show();
 	}
+
+	if (!ctx.hasNewPath(*sim_tracer))
+		return 42;
 
 	return 0;
 }
