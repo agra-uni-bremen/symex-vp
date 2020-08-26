@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+static clover::Solver *sim_solver = NULL;
 static clover::Trace *sim_tracer = NULL;
 
 using namespace rv32;
@@ -64,7 +65,7 @@ public:
 };
 
 int
-run_simulation(clover::Trace *tracer, int argc, char **argv)
+run_simulation(clover::Solver *solver, clover::Trace *tracer, int argc, char **argv)
 {
 	pid_t pid;
 	int ret, wstatus;
@@ -73,10 +74,12 @@ run_simulation(clover::Trace *tracer, int argc, char **argv)
 	case -1:
 		err(EXIT_FAILURE, "fork failed");
 	case 0:
+		sim_solver = solver;
 		sim_tracer = tracer;
+
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
-		return run_simulation(sim_tracer, argc, argv);
+		return run_simulation(sim_solver, sim_tracer, argc, argv);
 	default:
 		if (waitpid(pid, &wstatus, 0) == -1)
 			err(EXIT_FAILURE, "waitpid failed");
@@ -91,9 +94,10 @@ run_simulation(clover::Trace *tracer, int argc, char **argv)
 int
 main(int argc, char **argv)
 {
+	clover::Solver solver;
 	clover::Trace tracer;
 
-	return run_simulation(&tracer, argc, argv);
+	return run_simulation(&solver, &tracer, argc, argv);
 }
 
 int sc_main(int argc, char **argv) {
@@ -104,10 +108,9 @@ int sc_main(int argc, char **argv) {
 
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	clover::Solver solver;
-	clover::ExecutionContext ctx(solver);
+	clover::ExecutionContext ctx(*sim_solver);
 
-	ISS core(solver, ctx, *sim_tracer, 0, opt.use_E_base_isa);
+	ISS core(*sim_solver, ctx, *sim_tracer, 0, opt.use_E_base_isa);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SimpleMemory mem("SimpleMemory", opt.mem_size);
