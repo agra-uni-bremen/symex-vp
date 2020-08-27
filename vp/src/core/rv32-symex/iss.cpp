@@ -210,11 +210,10 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->bxor(I_IMM));
 			break;
 
-#if 0
 		case Opcode::ORI:
-			regs[instr.rd()] = regs[instr.rs1()] | instr.I_imm();
+			regs.write(RD, regs[RS1]->bor(I_IMM));
 			break;
-#endif
+
 		case Opcode::ANDI:
 			regs.write(RD, regs[RS1]->band(I_IMM));
 			break;
@@ -253,11 +252,9 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->bxor(regs[RS2]));
 			break;
 
-#if 0
 		case Opcode::OR:
-			regs[instr.rd()] = regs[instr.rs1()] | regs[instr.rs2()];
+			regs.write(RD, regs[RS1]->bor(regs[RS2]));
 			break;
-#endif
 
 		case Opcode::AND:
 			regs.write(RD, regs[RS1]->band(regs[RS2]));
