@@ -98,7 +98,7 @@ int sc_main(int argc, char **argv) {
 	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SimpleMemory dram("DRAM", opt.dram_size);
+	SymbolicMemory dram("DRAM", *sim_solver, opt.dram_size);
 	SimpleMemory flash("Flash", opt.flash_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 4> bus("SimpleBus");
@@ -106,24 +106,19 @@ int sc_main(int argc, char **argv) {
 	CLINT<1> clint("CLINT");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
-	MemoryDMI dram_dmi = MemoryDMI::create_start_size_mapping(dram.data, opt.dram_start_addr, dram.size);
-	MemoryDMI flash_dmi = MemoryDMI::create_start_size_mapping(flash.data, opt.flash_start_addr, flash.size);
-	InstrMemoryProxy instr_mem(flash_dmi, core);
-
 	std::shared_ptr<BusLock> bus_lock = std::make_shared<BusLock>();
 	core_mem_if.bus_lock = bus_lock;
 
 	instr_memory_if *instr_mem_if = &core_mem_if;
 	data_memory_if *data_mem_if = &core_mem_if;
-	if (opt.use_instr_dmi)
-		instr_mem_if = &instr_mem;
-	if (opt.use_data_dmi) {
-		core_mem_if.dmi_ranges.emplace_back(dram_dmi);
+	if (opt.use_instr_dmi || opt.use_data_dmi) {
+		std::cerr << "DMI not supported by symbolic execution backend" << std::endl;
+		return 1;
 	}
 
 	loader.load_executable_image(flash.data, flash.size, opt.flash_start_addr);
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
-	sys.init(dram.data, opt.dram_start_addr, loader.get_heap_addr());
+	sys.init(nullptr, 0, loader.get_heap_addr()); // XXX: Don't pass nullptr
 	sys.register_core(&core);
 
 	if (opt.intercept_syscalls)
