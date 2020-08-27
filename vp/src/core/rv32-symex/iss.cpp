@@ -336,12 +336,12 @@ void ISS::exec_step() {
                 	regs.write(RD, mem->load_word(addr));
 		} break;
 
-#if 0
 		case Opcode::LBU: {
-			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
-			regs[instr.rd()] = mem->load_ubyte(addr);
+			auto addr = regs[RS1]->add(I_IMM);
+			regs.write(RD, mem->load_ubyte(addr));
 		} break;
 
+#if 0
 		case Opcode::LHU: {
 			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
 			trap_check_addr_alignment<2, true>(addr);
