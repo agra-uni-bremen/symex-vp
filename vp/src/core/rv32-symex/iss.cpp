@@ -302,12 +302,12 @@ void ISS::exec_step() {
 			regs.write(RD, link);
 		} break;
 
-#if 0
 		case Opcode::SB: {
-			uint32_t addr = regs[instr.rs1()] + instr.S_imm();
-			mem->store_byte(addr, regs[instr.rs2()]);
+			auto addr = regs[RS1]->add(S_IMM);
+			mem->store_byte(addr, regs[RS2]);
 		} break;
 
+#if 0
 		case Opcode::SH: {
 			uint32_t addr = regs[instr.rs1()] + instr.S_imm();
 			trap_check_addr_alignment<2, false>(addr);
