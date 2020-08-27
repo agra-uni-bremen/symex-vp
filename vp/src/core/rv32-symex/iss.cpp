@@ -383,14 +383,18 @@ void ISS::exec_step() {
 				trap_check_pc_alignment();
 			}
 			break;
+#endif
 
-		case Opcode::BLTU:
-			if ((uint32_t)regs[instr.rs1()] < (uint32_t)regs[instr.rs2()]) {
+		case Opcode::BLTU: {
+			auto res = regs[RS1]->ult(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
 			}
-			break;
-#endif
+
+			track_and_trace_branch(cond, res);
+		} break;
 
 		case Opcode::BGEU: {
 			auto res = regs[RS1]->uge(regs[RS2]);
