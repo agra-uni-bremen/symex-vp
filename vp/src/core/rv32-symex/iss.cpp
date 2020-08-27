@@ -307,21 +307,19 @@ void ISS::exec_step() {
 			mem->store_byte(addr, regs[RS2]);
 		} break;
 
-#if 0
 		case Opcode::SH: {
-			uint32_t addr = regs[instr.rs1()] + instr.S_imm();
+			auto addr = regs[RS1]->add(S_IMM);
 			trap_check_addr_alignment<2, false>(addr);
-			mem->store_half(addr, regs[instr.rs2()]);
+			mem->store_half(addr, regs[RS2]);
 		} break;
-#endif
 
+#if 0
 		case Opcode::SW: {
 			auto addr = regs[RS1]->add(S_IMM);
 			trap_check_addr_alignment<4, false>(addr);
 			mem->store_word(addr, regs[RS2]);
 		} break;
 
-#if 0
 		case Opcode::LB: {
 			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
 			regs[instr.rd()] = mem->load_byte(addr);
