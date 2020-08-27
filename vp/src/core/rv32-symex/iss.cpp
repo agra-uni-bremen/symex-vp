@@ -432,12 +432,12 @@ void ISS::exec_step() {
 			}
 		} break;
 
-#if 0
 		case Opcode::EBREAK: {
 			// TODO: also raise trap and let the SW deal with it?
 			status = CoreExecStatus::HitBreakpoint;
 		} break;
 
+#if 0
 		case Opcode::CSRRW: {
 			auto addr = instr.csr();
 			if (is_invalid_csr_access(addr, true)) {
