@@ -214,11 +214,10 @@ void ISS::exec_step() {
 		case Opcode::ORI:
 			regs[instr.rd()] = regs[instr.rs1()] | instr.I_imm();
 			break;
-
-		case Opcode::ANDI:
-			regs[instr.rd()] = regs[instr.rs1()] & instr.I_imm();
-			break;
 #endif
+		case Opcode::ANDI:
+			regs.write(RD, regs[RS1]->band(I_IMM));
+			break;
 
 		case Opcode::ADD:
 			regs.write(RD, regs[RS1]->add(regs[RS2]));
