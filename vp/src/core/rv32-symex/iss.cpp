@@ -237,11 +237,9 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->ult(regs[RS2]));
 			break;
 
-#if 0
 		case Opcode::SRL:
-			regs[instr.rd()] = ((uint32_t)regs[instr.rs1()]) >> regs.shamt(instr.rs2());
+			regs.write(RD, regs[RS1]->lshr(regs.shamt(RS2)));
 			break;
-#endif
 
 		case Opcode::SRA:
 			regs.write(RD, regs[RS1]->ashr(regs.shamt(RS2)));
