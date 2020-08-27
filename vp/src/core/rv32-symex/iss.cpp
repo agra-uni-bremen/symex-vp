@@ -198,11 +198,11 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->add(I_IMM));
 			break;
 
-#if 0
 		case Opcode::SLTI:
-			regs[instr.rd()] = regs[instr.rs1()] < instr.I_imm();
+			regs.write(RD, regs[RS1]->slt(I_IMM));
 			break;
 
+#if 0
 		case Opcode::SLTIU:
 			regs[instr.rd()] = ((uint32_t)regs[instr.rs1()]) < ((uint32_t)instr.I_imm());
 			break;
