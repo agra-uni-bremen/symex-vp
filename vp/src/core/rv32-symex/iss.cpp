@@ -225,11 +225,9 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->sub(regs[RS2]));
 			break;
 
-#if 0
 		case Opcode::SLL:
-			regs[instr.rd()] = regs[instr.rs1()] << regs.shamt(instr.rs2());
+			regs.write(RD, regs[RS1]->lshl(regs.shamt(RS2)));
 			break;
-#endif
 
 		case Opcode::SLT:
 			regs.write(RD, regs[RS1]->slt(regs[RS2]));
