@@ -24,6 +24,7 @@ using namespace rv32;
 #define I_IMM solver.BVC(std::nullopt, (uint32_t)instr.I_imm())->sext(32)
 #define S_IMM solver.BVC(std::nullopt, (uint32_t)instr.S_imm())->sext(32)
 #define U_IMM solver.BVC(std::nullopt, (uint32_t)instr.U_imm()) /* XXX: sext? */
+#define SHAMT solver.BVC(std::nullopt, (uint32_t)instr.shamt())
 
 const char *regnames[] = {
     "zero (x0)", "ra   (x1)", "sp   (x2)", "gp   (x3)", "tp   (x4)", "t0   (x5)", "t1   (x6)", "t2   (x7)",
@@ -260,15 +261,15 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->band(regs[RS2]));
 			break;
 
-#if 0
 		case Opcode::SLLI:
-			regs[instr.rd()] = regs[instr.rs1()] << instr.shamt();
+			regs.write(RD, regs[RS1]->lshl(SHAMT));
 			break;
 
 		case Opcode::SRLI:
-			regs[instr.rd()] = ((uint32_t)regs[instr.rs1()]) >> instr.shamt();
+			regs.write(RD, regs[RS1]->lshr(SHAMT));
 			break;
 
+#if 0
 		case Opcode::SRAI:
 			regs[instr.rd()] = regs[instr.rs1()] >> instr.shamt();
 			break;
