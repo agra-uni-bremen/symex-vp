@@ -313,7 +313,6 @@ void ISS::exec_step() {
 			mem->store_half(addr, regs[RS2]);
 		} break;
 
-#if 0
 		case Opcode::SW: {
 			auto addr = regs[RS1]->add(S_IMM);
 			trap_check_addr_alignment<4, false>(addr);
@@ -321,10 +320,11 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::LB: {
-			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
-			regs[instr.rd()] = mem->load_byte(addr);
+			auto addr = regs[RS1]->add(I_IMM);
+			regs.write(RD, mem->load_byte(addr));
 		} break;
 
+#if 0
 		case Opcode::LH: {
 			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
 			trap_check_addr_alignment<2, true>(addr);
