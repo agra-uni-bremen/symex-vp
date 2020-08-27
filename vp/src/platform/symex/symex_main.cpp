@@ -73,7 +73,7 @@ int
 main(int argc, char **argv)
 {
 	clover::Solver solver;
-	clover::Trace tracer;
+	clover::Trace tracer(solver);
 	clover::ExecutionContext ctx(solver);
 
 	// Hide SystemC copyright message
