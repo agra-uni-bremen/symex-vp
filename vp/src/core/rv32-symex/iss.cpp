@@ -230,15 +230,17 @@ void ISS::exec_step() {
 		case Opcode::SLL:
 			regs[instr.rd()] = regs[instr.rs1()] << regs.shamt(instr.rs2());
 			break;
+#endif
 
 		case Opcode::SLT:
-			regs[instr.rd()] = regs[instr.rs1()] < regs[instr.rs2()];
+			regs.write(RD, regs[RS1]->slt(regs[RS2]));
 			break;
 
 		case Opcode::SLTU:
-			regs[instr.rd()] = ((uint32_t)regs[instr.rs1()]) < ((uint32_t)regs[instr.rs2()]);
+			regs.write(RD, regs[RS1]->ult(regs[RS2]));
 			break;
 
+#if 0
 		case Opcode::SRL:
 			regs[instr.rd()] = ((uint32_t)regs[instr.rs1()]) >> regs.shamt(instr.rs2());
 			break;
