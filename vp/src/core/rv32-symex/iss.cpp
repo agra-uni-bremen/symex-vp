@@ -344,21 +344,27 @@ void ISS::exec_step() {
 			regs.write(RD, mem->load_uhalf(addr));
 		} break;
 
-#if 0
-		case Opcode::BEQ:
-			if (regs[instr.rs1()] == regs[instr.rs2()]) {
-				cur_pc = last_pc + instr.B_imm();
-				trap_check_pc_alignment();
-			}
-			break;
-
-		case Opcode::BNE:
-			if (regs[instr.rs1()] != regs[instr.rs2()]) {
+		case Opcode::BEQ: {
+			auto res = regs[RS1]->eq(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
 			}
-			break;
-#endif
+
+			track_and_trace_branch(cond, res);
+		} break;
+
+		case Opcode::BNE: {
+			auto res = regs[RS1]->ne(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond) {
+				pc = last_pc + instr.B_imm();
+				trap_check_pc_alignment();
+			}
+
+			track_and_trace_branch(cond, res);
+		} break;
 
 		case Opcode::BLT: {
 			auto res = regs[RS1]->slt(regs[RS2]);
@@ -371,14 +377,16 @@ void ISS::exec_step() {
 			track_and_trace_branch(cond, res);
 		} break;
 
-#if 0
-		case Opcode::BGE:
-			if (regs[instr.rs1()] >= regs[instr.rs2()]) {
+		case Opcode::BGE: {
+			auto res = regs[RS1]->sge(regs[RS2]);
+			bool cond = solver.eval(res->concrete);
+			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
 			}
-			break;
-#endif
+
+			track_and_trace_branch(cond, res);
+		} break;
 
 		case Opcode::BLTU: {
 			auto res = regs[RS1]->ult(regs[RS2]);
