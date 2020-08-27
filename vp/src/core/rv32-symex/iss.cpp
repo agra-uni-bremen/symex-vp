@@ -206,11 +206,11 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->ult(I_IMM));
 			break;
 
-#if 0
 		case Opcode::XORI:
-			regs[instr.rd()] = regs[instr.rs1()] ^ instr.I_imm();
+			regs.write(RD, regs[RS1]->bxor(I_IMM));
 			break;
 
+#if 0
 		case Opcode::ORI:
 			regs[instr.rd()] = regs[instr.rs1()] | instr.I_imm();
 			break;
