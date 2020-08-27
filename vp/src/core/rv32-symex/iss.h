@@ -232,7 +232,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
         auto saddr = solver.BVC(std::nullopt, addr);
         auto value = ctx.getSymbolic(addr, size);
 
-        mem->_store_data(saddr, value, size);
+        mem->symbolic_store_data(saddr, value, size);
     }
 
     Architecture get_architecture(void) override {
@@ -253,7 +253,9 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
 	void release_lr_sc_reservation() {
 		lr_sc_counter = 0;
+#if 0
 		mem->atomic_unlock();
+#endif
 	}
 
 	void fp_prepare_instr();

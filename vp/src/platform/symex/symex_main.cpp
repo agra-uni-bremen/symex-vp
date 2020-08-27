@@ -7,6 +7,7 @@
 #include "iss.h"
 #include "mem.h"
 #include "memory.h"
+#include "symbolic_memory.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 

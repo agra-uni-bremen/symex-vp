@@ -3,15 +3,18 @@
 .globl _start
 _start:
 
-addi a3, zero, 0 /* later used for result */
+/* Get DRAM start address in t0 */
+GET_DRAM_START t0
 
-/* Make word (4 bytes) at addr 8 symbolic */
-MAKE_SYMBOLIC_MEM 8, 4
+/* Make word (4 bytes) at addr 0x80000000 symbolic */
+li t1, 4
+MAKE_SYMBOLIC_MEM t0, t1
 
-addi a0, zero, 4
-lw   a1, 4(a0)
+/* Load symbolic memory word into register a1 */
+lw   a1, 0(t0)
 
-blt  a0, a1, true
+li a2, 23
+blt  a2, a1, true
 addi a3, a3, 1
 true:
 addi a3, a3, 2

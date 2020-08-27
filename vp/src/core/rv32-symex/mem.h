@@ -4,7 +4,7 @@
 #include "iss.h"
 #include "mmu.h"
 
-#include <clover/clover.h>
+#include "platform/symex/symbolic_extension.h"
 
 namespace rv32 {
 
@@ -28,10 +28,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
                                  public instr_memory_if,
                                  public data_memory_if,
                                  public mmu_memory_if  {
-
 	ISS &iss;
-	clover::Solver &solver;
-	clover::ConcolicMemory sym_mem;
 	std::shared_ptr<bus_lock_if> bus_lock;
 	uint64_t lr_addr = 0;
 
@@ -46,7 +43,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
     MMU *mmu;
 
 	CombinedMemoryInterface(sc_core::sc_module_name, ISS &owner, MMU *mmu = nullptr)
-	    : iss(owner), solver(owner.solver), sym_mem(owner.solver), quantum_keeper(iss.quantum_keeper), mmu(mmu) {
+	    : iss(owner), quantum_keeper(iss.quantum_keeper), mmu(mmu) {
 	}
 
     uint64_t v2p(uint64_t vaddr, MemoryAccessType type) {
@@ -54,6 +51,27 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	        return vaddr;
         return mmu->translate_virtual_to_physical_addr(vaddr, type);
     }
+
+	inline void _do_transaction(tlm::tlm_generic_payload &trans) {
+		sc_core::sc_time local_delay = quantum_keeper.get_local_time();
+		isock->b_transport(trans, local_delay);
+
+		assert(local_delay >= quantum_keeper.get_local_time());
+		quantum_keeper.set(local_delay);
+
+		if (trans.is_response_error()) {
+			auto addr = trans.get_address();
+			if (iss.trace)
+				std::cout << "WARNING: core memory transaction failed -> raise trap" << std::endl;
+			if (trans.is_read())
+				raise_trap(EXC_LOAD_PAGE_FAULT, addr);
+			else if (trans.is_write())
+				raise_trap(EXC_STORE_AMO_PAGE_FAULT, addr);
+			else
+				throw std::runtime_error("TLM command must be read or write");
+		}
+
+	}
 
 	inline void _do_transaction(tlm::tlm_command cmd, uint64_t addr, uint8_t *data, unsigned num_bytes) {
 		tlm::tlm_generic_payload trans;
@@ -63,23 +81,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		trans.set_data_length(num_bytes);
 		trans.set_response_status(tlm::TLM_OK_RESPONSE);
 
-		sc_core::sc_time local_delay = quantum_keeper.get_local_time();
-
-		isock->b_transport(trans, local_delay);
-
-		assert(local_delay >= quantum_keeper.get_local_time());
-		quantum_keeper.set(local_delay);
-
-		if (trans.is_response_error()) {
-			if (iss.trace)
-				std::cout << "WARNING: core memory transaction failed -> raise trap" << std::endl;
-			if (cmd == tlm::TLM_READ_COMMAND)
-				raise_trap(EXC_LOAD_PAGE_FAULT, addr);
-			else if (cmd == tlm::TLM_WRITE_COMMAND)
-				raise_trap(EXC_STORE_AMO_PAGE_FAULT, addr);
-			else
-				throw std::runtime_error("TLM command must be read or write");
-		}
+		_do_transaction(trans);
 	}
 
 	template <typename T>
@@ -115,18 +117,20 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 
 		if (!done)
 			_do_transaction(tlm::TLM_WRITE_COMMAND, addr, (uint8_t *)&value, sizeof(T));
+#if 0
 		atomic_unlock();
+#endif
 	}
 
 
-    inline Value _load_data(Address addr, size_t size) {
-        auto caddr = solver.evalValue<uint32_t>(addr->concrete);
-        return sym_mem.load(v2p(caddr, LOAD), size);
+    template <typename T>
+    inline T _load_data(uint64_t addr) {
+        return _raw_load_data<T>(v2p(addr, LOAD));
     }
 
-    inline void _store_data(Address addr, Value value, size_t size) override {
-        auto caddr = solver.evalValue<uint32_t>(addr->concrete);
-        sym_mem.store(v2p(caddr, STORE), value, size);
+    template <typename T>
+    inline void _store_data(uint64_t addr, T value) {
+        _raw_store_data(v2p(addr, STORE), value);
     }
 
     uint64_t mmu_load_pte64(uint64_t addr) override {
@@ -147,53 +151,187 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
         return _raw_load_data<uint32_t>(v2p(addr, FETCH));
     }
 
-	Value load_double(Address addr) override {
-		return _load_data(addr, sizeof(uint64_t))->sext(64);
+#if 0
+    int64_t load_double(uint64_t addr) override {
+        return _load_data<int64_t>(addr);
+    }
+	int32_t load_word(uint64_t addr) override {
+		return _load_data<int32_t>(addr);
 	}
-	Value load_word(Address addr) override {
-		return _load_data(addr, sizeof(uint32_t))->sext(32);
+	int32_t load_half(uint64_t addr) override {
+		return _load_data<int16_t>(addr);
 	}
-	Value load_half(Address addr) override {
-		return _load_data(addr, sizeof(uint16_t))->sext(16);
+	int32_t load_byte(uint64_t addr) override {
+		return _load_data<int8_t>(addr);
 	}
-	Value load_byte(Address addr) override {
-		return _load_data(addr, sizeof(uint8_t))->sext(8);
+	uint32_t load_uhalf(uint64_t addr) override {
+		return _load_data<uint16_t>(addr);
 	}
-	Value load_uhalf(Address addr) override {
-		return _load_data(addr, sizeof(uint16_t));
-	}
-	Value load_ubyte(Address addr) override {
-		return _load_data(addr, sizeof(uint8_t));
-	}
-
-	void store_double(Address addr, Value value) override {
-		_store_data(addr, value->sext(64), sizeof(uint64_t));
-	}
-	void store_word(Address addr, Value value) override {
-		_store_data(addr, value->sext(32), sizeof(uint32_t));
-	}
-	void store_half(Address addr, Value value) override {
-		_store_data(addr, value->sext(16), sizeof(uint16_t));
-	}
-	void store_byte(Address addr, Value value) override {
-		_store_data(addr, value->sext(8), sizeof(uint8_t));
+	uint32_t load_ubyte(uint64_t addr) override {
+		return _load_data<uint8_t>(addr);
 	}
 
+    void store_double(uint64_t addr, uint64_t value) override {
+        _store_data(addr, value);
+    }
+	void store_word(uint64_t addr, uint32_t value) override {
+		_store_data(addr, value);
+	}
+	void store_half(uint64_t addr, uint16_t value) override {
+		_store_data(addr, value);
+	}
+	void store_byte(uint64_t addr, uint8_t value) override {
+		_store_data(addr, value);
+	}
+#endif
+
+	Concolic bytes_to_concolic(uint8_t *buf, size_t buflen) {
+		Concolic result = nullptr;
+		for (size_t i = 0; i < buflen; i++) {
+			auto byte = iss.solver.BVC(std::nullopt, (uint8_t)buf[i]);
+			if (!result) {
+				result = byte;
+			} else {
+				result = result->concat(byte);
+			}
+		}
+
+		return result;
+	}
+
+	void concolic_to_bytes(Concolic value, uint8_t *buf, size_t buflen) {
+		for (size_t i = 0; i < buflen; i++) {
+			// Extract expression works on bit indicies and bit sizes
+			auto byte = value->extract(i * 8, 8);
+			buf[i] = iss.solver.evalValue<uint8_t>(byte->concrete);
+		}
+	}
+
+	void symbolic_store_data(Concolic addr, Concolic data, size_t num_bytes) override {
+		bus_lock->wait_for_access_rights(iss.get_hart_id());
+		// XXX: DMI is currently not supported for symbolic values.
+
+		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto vaddr = v2p(caddr, STORE);
+
+		// TODO: don't use variadic buffer
+		uint8_t buf[num_bytes];
+		concolic_to_bytes(data, &buf[0], num_bytes);
+
+		tlm::tlm_generic_payload trans;
+		trans.set_command(tlm::TLM_WRITE_COMMAND);
+		trans.set_address(vaddr);
+		trans.set_data_ptr(&buf[0]);
+		trans.set_data_length(num_bytes);
+		trans.set_response_status(tlm::TLM_OK_RESPONSE);
+
+		// XXX: Where is this freed?
+		SymbolicExtension *extension = new SymbolicExtension(data);
+		trans.set_extension(extension);
+
+		_do_transaction(trans);
+	}
+
+	Concolic symbolic_load_data(Concolic addr, size_t num_bytes) override {
+		bus_lock->wait_for_access_rights(iss.get_hart_id());
+		// XXX: DMI is currently not supported for symbolic values.
+
+		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto vaddr = v2p(caddr, STORE);
+
+		// TODO: don't use variadic buffer
+		uint8_t buf[num_bytes];
+		memset(&buf, 0, num_bytes);
+
+		tlm::tlm_generic_payload trans;
+		trans.set_command(tlm::TLM_READ_COMMAND);
+		trans.set_address(vaddr);
+		trans.set_data_ptr(&buf[0]);
+		trans.set_data_length(num_bytes);
+		trans.set_response_status(tlm::TLM_OK_RESPONSE);
+
+		_do_transaction(trans);
+
+		SymbolicExtension *extension;
+		trans.get_extension(extension);
+		if (extension) {
+			return extension->getValue(); // XXX: free extension?!
+		} else {
+			return bytes_to_concolic(&buf[0], num_bytes);
+		}
+	}
+
+	Concolic load_double(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(int64_t))->sext(64);
+	}
+
+	Concolic load_word(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(int32_t))->sext(32);
+	}
+
+	Concolic load_half(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(int16_t))->sext(16);
+	}
+
+	Concolic load_byte(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(int8_t))->sext(8);
+	}
+
+	Concolic load_uhalf(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(uint16_t));
+	}
+
+	Concolic load_ubyte(Concolic addr) override {
+		return symbolic_load_data(addr, sizeof(uint8_t));
+	}
+
+	void store_double(Concolic addr, Concolic value) override {
+		symbolic_store_data(addr, value, sizeof(uint64_t));
+	}
+
+	void store_word(Concolic addr, Concolic value) override {
+		symbolic_store_data(addr, value, sizeof(uint32_t));
+	}
+
+	void store_half(Concolic addr, Concolic value) override {
+		symbolic_store_data(addr, value, sizeof(uint16_t));
+	}
+
+	void store_byte(Concolic addr, Concolic value) override {
+		symbolic_store_data(addr, value, sizeof(uint8_t));
+	}
+
+#if 0
 	virtual int32_t atomic_load_word(uint64_t addr) override {
-		throw std::string(__func__) + " not implemented";
+		bus_lock->lock(iss.get_hart_id());
+		return load_word(addr);
 	}
 	virtual void atomic_store_word(uint64_t addr, uint32_t value) override {
-		throw std::string(__func__) + " not implemented";
+		assert(bus_lock->is_locked(iss.get_hart_id()));
+		store_word(addr, value);
 	}
 	virtual int32_t atomic_load_reserved_word(uint64_t addr) override {
-		throw std::string(__func__) + " not implemented";
+		bus_lock->lock(iss.get_hart_id());
+		lr_addr = addr;
+		return load_word(addr);
 	}
 	virtual bool atomic_store_conditional_word(uint64_t addr, uint32_t value) override {
-		throw std::string(__func__) + " not implemented";
+		/* According to the RISC-V ISA, an implementation can fail each LR/SC sequence that does not satisfy the forward
+		 * progress semantic.
+		 * The lock is established by the LR instruction and the lock is kept while forward progress is maintained. */
+		if (bus_lock->is_locked(iss.get_hart_id())) {
+			if (addr == lr_addr) {
+				store_word(addr, value);
+				return true;
+			}
+			atomic_unlock();
+		}
+		return false;
 	}
 	virtual void atomic_unlock() override {
-		throw std::string(__func__) + " not implemented";
+		bus_lock->unlock(iss.get_hart_id());
 	}
+#endif
 };
 
 }  // namespace rv32
