@@ -368,8 +368,10 @@ void ISS::exec_step() {
 		case Opcode::BLT: {
 			auto res = regs[RS1]->slt(regs[RS2]);
 			bool cond = solver.eval(res->concrete);
-			if (cond)
+			if (cond) {
 				pc = last_pc + instr.B_imm();
+				trap_check_pc_alignment();
+			}
 
 			if (res->symbolic.has_value())
 				tracer.add(cond, *res->symbolic);
@@ -394,8 +396,10 @@ void ISS::exec_step() {
 		case Opcode::BGEU: {
 			auto res = regs[RS1]->uge(regs[RS2]);
 			bool cond = solver.eval(res->concrete);
-			if (cond)
+			if (cond) {
 				pc = last_pc + instr.B_imm();
+				trap_check_pc_alignment();
+			}
 
 			if (res->symbolic.has_value())
 				tracer.add(cond, *res->symbolic);
