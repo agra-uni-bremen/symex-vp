@@ -247,11 +247,13 @@ void ISS::exec_step() {
 		case Opcode::SRA:
 			regs[instr.rd()] = regs[instr.rs1()] >> regs.shamt(instr.rs2());
 			break;
+#endif
 
 		case Opcode::XOR:
-			regs[instr.rd()] = regs[instr.rs1()] ^ regs[instr.rs2()];
+			regs.write(RD, regs[RS1]->bxor(regs[RS2]));
 			break;
 
+#if 0
 		case Opcode::OR:
 			regs[instr.rd()] = regs[instr.rs1()] | regs[instr.rs2()];
 			break;
