@@ -373,8 +373,7 @@ void ISS::exec_step() {
 				trap_check_pc_alignment();
 			}
 
-			if (res->symbolic.has_value())
-				tracer.add(cond, *res->symbolic);
+			track_and_trace_branch(cond, res);
 		} break;
 
 #if 0
@@ -401,8 +400,7 @@ void ISS::exec_step() {
 				trap_check_pc_alignment();
 			}
 
-			if (res->symbolic.has_value())
-				tracer.add(cond, *res->symbolic);
+			track_and_trace_branch(cond, res);
 		} break;
 
 		case Opcode::FENCE:

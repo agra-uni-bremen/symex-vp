@@ -221,6 +221,11 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
     std::vector<uint64_t> get_registers(void) override;
 
+    void track_and_trace_branch(bool cond, std::shared_ptr<clover::ConcolicValue> expr) {
+        if (expr->symbolic.has_value())
+            tracer.add(cond, *expr->symbolic);
+    };
+
     void make_symbolic(size_t index) override {
         regs.write(index, ctx.getSymbolic(index));
     }
