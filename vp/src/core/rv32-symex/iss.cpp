@@ -65,12 +65,10 @@ RegFile::RegValue RegFile::read(uint32_t index) {
 	return regs[index];
 }
 
-#if 0
-uint32_t RegFile::shamt(uint32_t index) {
+RegFile::RegValue RegFile::shamt(uint32_t index) {
 	assert(index <= x31);
-	return BIT_RANGE(regs[index], 4, 0);
+	return regs[index]->extract(0, 5)->sext(32);
 }
-#endif
 
 const RegFile::RegValue &RegFile::operator[](const uint32_t idx) {
 	return regs[idx];

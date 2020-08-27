@@ -46,9 +46,7 @@ struct RegFile {
 
 	RegFile::RegValue read(uint32_t index);
 
-#if 0
-	uint32_t shamt(uint32_t index);
-#endif
+	RegFile::RegValue shamt(uint32_t index);
 
 	const RegValue &operator[](const uint32_t idx);
 
