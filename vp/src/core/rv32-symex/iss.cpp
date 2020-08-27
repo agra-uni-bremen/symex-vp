@@ -267,11 +267,9 @@ void ISS::exec_step() {
 			regs.write(RD, regs[RS1]->lshr(SHAMT));
 			break;
 
-#if 0
 		case Opcode::SRAI:
-			regs[instr.rd()] = regs[instr.rs1()] >> instr.shamt();
+			regs.write(RD, regs[RS1]->ashr(SHAMT));
 			break;
-#endif
 
 		case Opcode::LUI:
 			regs.write(RD, U_IMM);
