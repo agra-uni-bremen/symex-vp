@@ -341,13 +341,13 @@ void ISS::exec_step() {
 			regs.write(RD, mem->load_ubyte(addr));
 		} break;
 
-#if 0
 		case Opcode::LHU: {
-			uint32_t addr = regs[instr.rs1()] + instr.I_imm();
+			auto addr = regs[RS1]->add(I_IMM);
 			trap_check_addr_alignment<2, true>(addr);
-			regs[instr.rd()] = mem->load_uhalf(addr);
+			regs.write(RD, mem->load_uhalf(addr));
 		} break;
 
+#if 0
 		case Opcode::BEQ:
 			if (regs[instr.rs1()] == regs[instr.rs2()]) {
 				cur_pc = last_pc + instr.B_imm();
