@@ -3,8 +3,7 @@
 #include "core/common/dmi.h"
 #include "iss.h"
 #include "mmu.h"
-
-#include "platform/symex/symbolic_extension.h"
+#include "symbolic_extension.h"
 
 namespace rv32 {
 

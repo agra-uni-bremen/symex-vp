@@ -20,5 +20,5 @@ if(SYMEX_BACKEND)
 		${STP_LIBRARY_DIR}
 		${KLEE_LIBRARY_DIR})
 
-	subdirs(clover)
+	subdirs(symex)
 endif()

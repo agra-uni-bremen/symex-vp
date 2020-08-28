@@ -5,5 +5,5 @@
 	path = vp/tests
 	url = git@gitlab.informatik.uni-bremen.de:riscv/vp-integration-tests.git
 [submodule "vp/src/clover"]
-	path = vp/src/clover
+	path = vp/src/symex/clover
 	url = git@gitlab.informatik.uni-bremen.de:riscv/clover.git

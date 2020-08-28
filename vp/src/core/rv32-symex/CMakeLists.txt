@@ -5,7 +5,7 @@ add_library(rv32-symex
 		syscall.cpp
         ${HEADERS})
 
-target_link_libraries(rv32-symex clover core-common ${SoftFloat_LIBRARIES})
+target_link_libraries(rv32-symex symex core-common ${SoftFloat_LIBRARIES})
 
 if(COLOR_THEME STREQUAL "LIGHT")
 	message("> using color theme LIGHT")
