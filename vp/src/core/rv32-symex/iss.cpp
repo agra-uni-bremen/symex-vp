@@ -435,7 +435,6 @@ void ISS::exec_step() {
 			status = CoreExecStatus::HitBreakpoint;
 		} break;
 
-#if 0
 		case Opcode::CSRRW: {
 			auto addr = instr.csr();
 			if (is_invalid_csr_access(addr, true)) {
@@ -444,9 +443,9 @@ void ISS::exec_step() {
 				auto rd = instr.rd();
 				auto rs1_val = regs[instr.rs1()];
 				if (rd != RegFile::zero) {
-					regs[instr.rd()] = get_csr_value(addr);
+					regs.write(RD, solver.BVC(std::nullopt, get_csr_value(addr)));
 				}
-				set_csr_value(addr, rs1_val);
+				set_csr_value(addr, solver.evalValue<uint32_t>(rs1_val->concrete));
 			}
 		} break;
 
@@ -461,12 +460,13 @@ void ISS::exec_step() {
 				auto rs1_val = regs[rs1];
 				auto csr_val = get_csr_value(addr);
 				if (rd != RegFile::zero)
-					regs[rd] = csr_val;
+					regs.write(RD, solver.BVC(std::nullopt, csr_val));
 				if (write)
-					set_csr_value(addr, csr_val | rs1_val);
+					set_csr_value(addr, csr_val | solver.evalValue<uint32_t>(rs1_val->concrete));
 			}
 		} break;
 
+#if 0
 		case Opcode::CSRRC: {
 			auto addr = instr.csr();
 			auto rs1 = instr.rs1();
@@ -483,6 +483,8 @@ void ISS::exec_step() {
 					set_csr_value(addr, csr_val & ~rs1_val);
 			}
 		} break;
+#endif
+
 
 		case Opcode::CSRRWI: {
 			auto addr = instr.csr();
@@ -491,12 +493,13 @@ void ISS::exec_step() {
 			} else {
 				auto rd = instr.rd();
 				if (rd != RegFile::zero) {
-					regs[rd] = get_csr_value(addr);
+					regs.write(RD, solver.BVC(std::nullopt, get_csr_value(addr)));
 				}
 				set_csr_value(addr, instr.zimm());
 			}
 		} break;
 
+#if 0
 		case Opcode::CSRRSI: {
 			auto addr = instr.csr();
 			auto zimm = instr.zimm();
@@ -1155,11 +1158,13 @@ void ISS::exec_step() {
                 raise_trap(EXC_ILLEGAL_INSTR, instr.data());
             return_from_trap_handler(SupervisorMode);
             break;
+#endif
 
         case Opcode::MRET:
             return_from_trap_handler(MachineMode);
             break;
 
+#if 0
             // instructions accepted by decoder but not by this RV32IMACF ISS -> do normal trap
             // RV64I
         case Opcode::LWU:
