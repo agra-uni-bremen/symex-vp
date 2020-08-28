@@ -118,6 +118,9 @@ int sc_main(int argc, char **argv) {
 
 	loader.load_executable_image(flash.data, flash.size, opt.flash_start_addr);
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
+	core.symbolic_start_addr = opt.dram_start_addr;
+	core.symbolic_end_addr   = opt.dram_end_addr;
+
 	sys.init(nullptr, 0, loader.get_heap_addr()); // XXX: Don't pass nullptr
 	sys.register_core(&core);
 
