@@ -1,10 +1,27 @@
 #include "symbolic_memory.h"
 
-SymbolicMemory::SymbolicMemory(sc_core::sc_module_name, clover::Solver &solver, size_t _size)
-    : memory(solver), size(_size)
+SymbolicMemory::SymbolicMemory(sc_core::sc_module_name, clover::Solver &_solver, size_t _size)
+    : solver(_solver), memory(solver), size(_size)
 {
 	tsock.register_b_transport(this, &SymbolicMemory::transport);
 	tsock.register_transport_dbg(this, &SymbolicMemory::transport_dbg);
+}
+
+void
+SymbolicMemory::load_data(const char *src, uint64_t dst_addr, size_t n)
+{
+	for (size_t i = 0; i < n; i++) {
+		auto byte = solver.BVC(std::nullopt, (uint8_t)src[i]);
+		memory.store(dst_addr + i, byte, 1);
+	}
+}
+
+void
+SymbolicMemory::load_zero(uint64_t dst_addr, size_t n)
+{
+	auto zero = solver.BVC(std::nullopt, (uint8_t)0);
+	for (size_t i = 0; i < n; i++)
+		memory.store(dst_addr + i, zero, 1);
 }
 
 unsigned
