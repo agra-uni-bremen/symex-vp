@@ -295,10 +295,6 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		return symbolic_load_data(addr, sizeof(uint8_t))->zext(32);
 	}
 
-	void store_double(Concolic addr, Concolic value) override {
-		symbolic_store_data(addr, value, sizeof(uint64_t));
-	}
-
 	void store_word(Concolic addr, Concolic value) override {
 		symbolic_store_data(addr, value, sizeof(uint32_t));
 	}

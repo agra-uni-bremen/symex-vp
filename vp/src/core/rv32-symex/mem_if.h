@@ -46,7 +46,6 @@ struct data_memory_if {
 	virtual Concolic load_uhalf(Concolic addr) = 0;
 	virtual Concolic load_ubyte(Concolic addr) = 0;
 
-	virtual void store_double(Concolic addr, Concolic value) = 0;
 	virtual void store_word(Concolic addr, Concolic value) = 0;
 	virtual void store_half(Concolic addr, Concolic value) = 0;
 	virtual void store_byte(Concolic addr, Concolic value) = 0;
