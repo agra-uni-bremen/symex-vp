@@ -57,7 +57,7 @@ RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver
 
 void RegFile::write(uint32_t index, RegFile::RegValue value) {
 	assert(index <= x31);
-	regs[index] = value;
+	regs[index] = value->zext(32);
 }
 
 RegFile::RegValue RegFile::read(uint32_t index) {
