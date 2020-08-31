@@ -40,7 +40,6 @@ struct data_memory_if {
 	virtual void symbolic_store_data(Concolic addr, Concolic data, size_t num_bytes) = 0;
 	virtual Concolic symbolic_load_data(Concolic addr, size_t num_bytes) = 0;
 
-	virtual Concolic load_double(Concolic addr) = 0;
 	virtual Concolic load_word(Concolic addr) = 0;
 	virtual Concolic load_half(Concolic addr) = 0;
 	virtual Concolic load_byte(Concolic addr) = 0;

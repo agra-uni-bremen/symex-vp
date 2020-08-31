@@ -275,28 +275,24 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		}
 	}
 
-	Concolic load_double(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(int64_t))->sext(64);
-	}
-
 	Concolic load_word(Concolic addr) override {
 		return symbolic_load_data(addr, sizeof(int32_t))->sext(32);
 	}
 
 	Concolic load_half(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(int16_t))->sext(16);
+		return symbolic_load_data(addr, sizeof(int16_t))->sext(32);
 	}
 
 	Concolic load_byte(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(int8_t))->sext(8);
+		return symbolic_load_data(addr, sizeof(int8_t))->sext(32);
 	}
 
 	Concolic load_uhalf(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(uint16_t));
+		return symbolic_load_data(addr, sizeof(uint16_t))->zext(32);
 	}
 
 	Concolic load_ubyte(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(uint8_t));
+		return symbolic_load_data(addr, sizeof(uint8_t))->zext(32);
 	}
 
 	void store_double(Concolic addr, Concolic value) override {
