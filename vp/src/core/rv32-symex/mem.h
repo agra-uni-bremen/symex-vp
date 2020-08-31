@@ -72,7 +72,39 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 
 	}
 
-	inline void _do_transaction(tlm::tlm_command cmd, uint64_t addr, uint8_t *data, unsigned num_bytes) {
+	void _do_transaction(tlm::tlm_command cmd, uint64_t addr, Concolic &data, size_t num_bytes) {
+		uint8_t buf[num_bytes];
+		if (cmd == tlm::TLM_WRITE_COMMAND)
+			concolic_to_bytes(data, &buf[0], num_bytes);
+		else
+			memset(&buf, 0, num_bytes);
+
+		tlm::tlm_generic_payload trans;
+		trans.set_command(cmd);
+		trans.set_address(addr);
+		trans.set_data_ptr(&buf[0]);
+		trans.set_data_length(num_bytes);
+		trans.set_response_status(tlm::TLM_OK_RESPONSE);
+
+		if (cmd == tlm::TLM_WRITE_COMMAND) {
+			SymbolicExtension *extension = new SymbolicExtension(data);
+			trans.set_extension(extension);
+		}
+
+		_do_transaction(trans);
+		if (cmd == tlm::TLM_WRITE_COMMAND)
+			return;
+
+		SymbolicExtension *extension;
+		trans.get_extension(extension);
+		if (extension) {
+			data = extension->getValue(); // XXX: free extension?!
+		} else {
+			data = bytes_to_concolic(&buf[0], num_bytes);
+		}
+	}
+
+	inline void _do_transaction(tlm::tlm_command cmd, uint64_t addr, uint8_t *data, size_t num_bytes) {
 		tlm::tlm_generic_payload trans;
 		trans.set_command(cmd);
 		trans.set_address(addr);
@@ -80,11 +112,26 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		trans.set_data_length(num_bytes);
 		trans.set_response_status(tlm::TLM_OK_RESPONSE);
 
+		if (cmd == tlm::TLM_WRITE_COMMAND) {
+			Concolic cdata = bytes_to_concolic(data, num_bytes);
+			SymbolicExtension *extension = new SymbolicExtension(cdata);
+			trans.set_extension(extension);
+		}
+
 		_do_transaction(trans);
+		if (cmd == tlm::TLM_WRITE_COMMAND)
+			return;
+
+		SymbolicExtension *extension;
+		trans.get_extension(extension);
+		if (extension) {
+			concolic_to_bytes(extension->getValue(), data, num_bytes);
+		}
+
 	}
 
 	template <typename T>
-	inline T _raw_load_data(uint64_t addr) {
+	inline T concrete_load_data(uint64_t addr) {
 		// NOTE: a DMI load will not context switch (SystemC) and not modify the memory, hence should be able to
 		// postpone the lock after the dmi access
 		bus_lock->wait_for_access_rights(iss.get_hart_id());
@@ -102,7 +149,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	}
 
 	template <typename T>
-	inline void _raw_store_data(uint64_t addr, T value) {
+	inline void concrete_store_data(uint64_t addr, T value) {
 		bus_lock->wait_for_access_rights(iss.get_hart_id());
 
 		bool done = false;
@@ -121,25 +168,46 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 #endif
 	}
 
+	void symbolic_store_data(Concolic addr, Concolic data, size_t num_bytes) override {
+		bus_lock->wait_for_access_rights(iss.get_hart_id());
+		// XXX: DMI is currently not supported for symbolic values.
+
+		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto vaddr = v2p(caddr, STORE);
+
+		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
+	}
+
+	Concolic symbolic_load_data(Concolic addr, size_t num_bytes) override {
+		bus_lock->wait_for_access_rights(iss.get_hart_id());
+		// XXX: DMI is currently not supported for symbolic values.
+
+		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto vaddr = v2p(caddr, STORE);
+
+		Concolic data;
+		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
+		return data;
+	}
 
     template <typename T>
     inline T _load_data(uint64_t addr) {
-        return _raw_load_data<T>(v2p(addr, LOAD));
+        return concrete_load_data<T>(v2p(addr, LOAD));
     }
 
     template <typename T>
     inline void _store_data(uint64_t addr, T value) {
-        _raw_store_data(v2p(addr, STORE), value);
+        concrete_store_data(v2p(addr, STORE), value);
     }
 
     uint64_t mmu_load_pte64(uint64_t addr) override {
-        return _raw_load_data<uint64_t>(addr);
+        return concrete_load_data<uint64_t>(addr);
     }
     uint64_t mmu_load_pte32(uint64_t addr) override {
-        return _raw_load_data<uint32_t>(addr);
+        return concrete_load_data<uint32_t>(addr);
     }
     void mmu_store_pte32(uint64_t addr, uint32_t value) override {
-        _raw_store_data(addr, value);
+        concrete_store_data(addr, value);
     }
 
     void flush_tlb() override {
@@ -147,7 +215,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
     }
 
     uint32_t load_instr(uint64_t addr) override {
-        return _raw_load_data<uint32_t>(v2p(addr, FETCH));
+        return concrete_load_data<uint32_t>(v2p(addr, FETCH));
     }
 
 #if 0
@@ -203,60 +271,6 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 			// Extract expression works on bit indicies and bit sizes
 			auto byte = value->extract(i * 8, 8);
 			buf[i] = iss.solver.evalValue<uint8_t>(byte->concrete);
-		}
-	}
-
-	void symbolic_store_data(Concolic addr, Concolic data, size_t num_bytes) override {
-		bus_lock->wait_for_access_rights(iss.get_hart_id());
-		// XXX: DMI is currently not supported for symbolic values.
-
-		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
-		auto vaddr = v2p(caddr, STORE);
-
-		// TODO: don't use variadic buffer
-		uint8_t buf[num_bytes];
-		concolic_to_bytes(data, &buf[0], num_bytes);
-
-		tlm::tlm_generic_payload trans;
-		trans.set_command(tlm::TLM_WRITE_COMMAND);
-		trans.set_address(vaddr);
-		trans.set_data_ptr(&buf[0]);
-		trans.set_data_length(num_bytes);
-		trans.set_response_status(tlm::TLM_OK_RESPONSE);
-
-		// XXX: Where is this freed?
-		SymbolicExtension *extension = new SymbolicExtension(data);
-		trans.set_extension(extension);
-
-		_do_transaction(trans);
-	}
-
-	Concolic symbolic_load_data(Concolic addr, size_t num_bytes) override {
-		bus_lock->wait_for_access_rights(iss.get_hart_id());
-		// XXX: DMI is currently not supported for symbolic values.
-
-		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
-		auto vaddr = v2p(caddr, STORE);
-
-		// TODO: don't use variadic buffer
-		uint8_t buf[num_bytes];
-		memset(&buf, 0, num_bytes);
-
-		tlm::tlm_generic_payload trans;
-		trans.set_command(tlm::TLM_READ_COMMAND);
-		trans.set_address(vaddr);
-		trans.set_data_ptr(&buf[0]);
-		trans.set_data_length(num_bytes);
-		trans.set_response_status(tlm::TLM_OK_RESPONSE);
-
-		_do_transaction(trans);
-
-		SymbolicExtension *extension;
-		trans.get_extension(extension);
-		if (extension) {
-			return extension->getValue(); // XXX: free extension?!
-		} else {
-			return bytes_to_concolic(&buf[0], num_bytes);
 		}
 	}
 
