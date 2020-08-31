@@ -3,10 +3,8 @@
 .globl _start
 _start:
 
-/* Get DRAM start address in t0 */
-GET_DRAM_START t0
-
-/* Make word (4 bytes) at addr 0x80000000 symbolic */
+/* Make word (4 bytes) at addr 0x0 symbolic */
+li t0, 0
 li t1, 4
 MAKE_SYMBOLIC_MEM t0, t1
 

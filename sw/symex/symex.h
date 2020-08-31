@@ -1,9 +1,3 @@
-.macro GET_DRAM_START, register
-/* 2 << 30 == 0x80000000 (DRAM start address) */
-li   \register, 2
-slli \register, \register, 30
-.endm
-
 .macro SYS_EXIT, exit_code
 li   a7, 93 /* SYS_exit */
 li   a0, \exit_code
