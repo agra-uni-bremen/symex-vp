@@ -267,13 +267,9 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	}
 
 	void concolic_to_bytes(Concolic value, uint8_t *buf, size_t buflen) {
-		size_t i, j;
-
-		assert(buflen > 0);
-		for (i = 0, j = buflen - 1; i < buflen; i++, j--) {
+		for (size_t i = 0; i < buflen; i++) {
 			// Extract expression works on bit indicies and bit sizes
-			// Also swap the byte order here to return little-endian.
-			auto byte = value->extract(j * 8, 8);
+			auto byte = value->extract(i * 8, 8);
 			buf[i] = iss.solver.evalValue<uint8_t>(byte->concrete);
 		}
 	}
