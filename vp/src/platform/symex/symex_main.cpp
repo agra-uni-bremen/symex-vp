@@ -94,7 +94,7 @@ int sc_main(int argc, char **argv) {
 	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SimpleMemory mem("mem", opt.mem_size);
+	SymbolicMemory mem("mem", *sim_solver, opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 3> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");
@@ -111,7 +111,7 @@ int sc_main(int argc, char **argv) {
 		return 1;
 	}
 
-	loader.load_executable_image(mem, mem.size, opt.mem_start_addr, false);
+	loader.load_executable_image(mem, opt.mem_size, opt.mem_start_addr, false);
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.mem_end_addr));
 	sys.init(nullptr, 0, loader.get_heap_addr()); // XXX: Don't pass nullptr
 	sys.register_core(&core);
