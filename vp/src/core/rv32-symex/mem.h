@@ -186,7 +186,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		auto vaddr = v2p(caddr, STORE);
 
 		Concolic data;
-		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
+		_do_transaction(tlm::TLM_READ_COMMAND, vaddr, data, num_bytes);
 		return data;
 	}
 
