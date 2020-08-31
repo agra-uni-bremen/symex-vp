@@ -31,13 +31,9 @@ struct SymexOptions : public Options {
 public:
 	typedef unsigned int addr_t;
 
-	addr_t dram_size = 1024 * 16;  // 16 KB dram
-	addr_t dram_start_addr = 0x80000000;
-	addr_t dram_end_addr = dram_start_addr + dram_size - 1;
-
-	addr_t flash_size = 1024 * 1024 * 512;  // 512 MB flash
-	addr_t flash_start_addr = 0x00000000;
-	addr_t flash_end_addr = flash_start_addr + flash_size - 1;
+	addr_t mem_size = 1024 * 1024 * 512;  // 512 MB mem
+	addr_t mem_start_addr = 0x00000000;
+	addr_t mem_end_addr = mem_start_addr + mem_size - 1;
 
 	addr_t clint_start_addr = 0x02000000;
 	addr_t clint_end_addr = 0x0200ffff;
@@ -98,10 +94,9 @@ int sc_main(int argc, char **argv) {
 	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SymbolicMemory dram("DRAM", *sim_solver, opt.dram_size);
-	SimpleMemory flash("Flash", opt.flash_size);
+	SimpleMemory mem("mem", opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
-	SimpleBus<2, 4> bus("SimpleBus");
+	SimpleBus<2, 3> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");
 	CLINT<1> clint("CLINT");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
@@ -116,11 +111,8 @@ int sc_main(int argc, char **argv) {
 		return 1;
 	}
 
-	loader.load_executable_image(flash.data, flash.size, opt.flash_start_addr, false);
-	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
-	core.symbolic_start_addr = opt.dram_start_addr;
-	core.symbolic_end_addr   = opt.dram_end_addr;
-
+	loader.load_executable_image(mem, mem.size, opt.mem_start_addr, false);
+	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.mem_end_addr));
 	sys.init(nullptr, 0, loader.get_heap_addr()); // XXX: Don't pass nullptr
 	sys.register_core(&core);
 
@@ -128,18 +120,16 @@ int sc_main(int argc, char **argv) {
 		core.sys = &sys;
 
 	// setup port mapping
-	bus.ports[0] = new PortMapping(opt.flash_start_addr, opt.flash_end_addr);
-	bus.ports[1] = new PortMapping(opt.dram_start_addr, opt.dram_end_addr);
-	bus.ports[2] = new PortMapping(opt.clint_start_addr, opt.clint_end_addr);
-	bus.ports[3] = new PortMapping(opt.sys_start_addr, opt.sys_end_addr);
+	bus.ports[0] = new PortMapping(opt.mem_start_addr, opt.mem_end_addr);
+	bus.ports[1] = new PortMapping(opt.clint_start_addr, opt.clint_end_addr);
+	bus.ports[2] = new PortMapping(opt.sys_start_addr, opt.sys_end_addr);
 
 	// connect TLM sockets
 	core_mem_if.isock.bind(bus.tsocks[0]);
 	dbg_if.isock.bind(bus.tsocks[1]);
-	bus.isocks[0].bind(flash.tsock);
-	bus.isocks[1].bind(dram.tsock);
-	bus.isocks[2].bind(clint.tsock);
-	bus.isocks[3].bind(sys.tsock);
+	bus.isocks[0].bind(mem.tsock);
+	bus.isocks[1].bind(clint.tsock);
+	bus.isocks[2].bind(sys.tsock);
 
 	// connect interrupt signals/communication
 	clint.target_harts[0] = &core;

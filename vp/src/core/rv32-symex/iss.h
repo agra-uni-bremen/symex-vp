@@ -160,8 +160,6 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	clover::ExecutionContext &ctx;
 	clover::Trace &tracer;
 
-	size_t symbolic_start_addr, symbolic_end_addr;
-
 	clint_if *clint = nullptr;
 	instr_memory_if *instr_mem = nullptr;
 	data_memory_if *mem = nullptr;
@@ -233,9 +231,6 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
     void make_symbolic(uint32_t addr, size_t size) override {
         auto saddr = solver.BVC(std::nullopt, addr);
         auto value = ctx.getSymbolic(addr, size);
-
-        if (!(addr >= symbolic_start_addr && addr + size < symbolic_end_addr))
-            throw std::logic_error("make_symbolic on non-symbolic address");
 
         mem->symbolic_store_data(saddr, value, size);
     }
