@@ -57,7 +57,12 @@ RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver
 
 void RegFile::write(uint32_t index, RegFile::RegValue value) {
 	assert(index <= x31);
-	regs[index] = value->zext(32);
+	if (value->getWidth() < 32)
+		regs[index] = value->zext(32);
+	else if (value->getWidth() == 32)
+		regs[index] = value;
+	else
+		assert("invalid register width");
 }
 
 RegFile::RegValue RegFile::read(uint32_t index) {

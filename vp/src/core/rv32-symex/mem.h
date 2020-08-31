@@ -127,7 +127,6 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		if (extension) {
 			concolic_to_bytes(extension->getValue(), data, num_bytes);
 		}
-
 	}
 
 	template <typename T>
@@ -267,10 +266,12 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	}
 
 	void concolic_to_bytes(Concolic value, uint8_t *buf, size_t buflen) {
-		auto extended = value->zext(buflen * 8);
+		if (value->getWidth() < buflen * 8)
+			value = value->zext(buflen * 8);
+
 		for (size_t i = 0; i < buflen; i++) {
 			// Extract expression works on bit indicies and bit sizes
-			auto byte = extended->extract(i * 8, klee::Expr::Int8);
+			auto byte = value->extract(i * 8, klee::Expr::Int8);
 			buf[i] = iss.solver.evalValue<uint8_t>(byte->concrete);
 		}
 	}
