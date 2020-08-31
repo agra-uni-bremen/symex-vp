@@ -62,7 +62,7 @@ SymbolicMemory::transport_dbg(tlm::tlm_generic_payload &trans)
 	uint64_t addr = trans.get_address();
 	auto len = trans.get_data_length();
 
-	if (addr + len >= size) {
+	if (addr + len > size) {
 		trans.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
 		return 0;
 	}
