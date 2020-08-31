@@ -499,7 +499,6 @@ void ISS::exec_step() {
 			}
 		} break;
 
-#if 0
 		case Opcode::CSRRSI: {
 			auto addr = instr.csr();
 			auto zimm = instr.zimm();
@@ -510,12 +509,13 @@ void ISS::exec_step() {
 				auto csr_val = get_csr_value(addr);
 				auto rd = instr.rd();
 				if (rd != RegFile::zero)
-					regs[rd] = csr_val;
+					regs.write(RD, solver.BVC(std::nullopt, csr_val));
 				if (write)
 					set_csr_value(addr, csr_val | zimm);
 			}
 		} break;
 
+#if 0
 		case Opcode::CSRRCI: {
 			auto addr = instr.csr();
 			auto zimm = instr.zimm();
