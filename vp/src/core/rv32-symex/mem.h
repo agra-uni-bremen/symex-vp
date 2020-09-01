@@ -259,7 +259,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 			if (!result) {
 				result = byte;
 			} else {
-				result = result->concat(byte);
+				result = byte->concat(result);
 			}
 		}
 
