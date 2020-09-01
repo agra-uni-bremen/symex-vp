@@ -1126,6 +1126,7 @@ void ISS::exec_step() {
 
         // privileged instructions
 
+#endif
         case Opcode::WFI:
             // NOTE: only a hint, can be implemented as NOP
             // std::cout << "[sim:wfi] CSR mstatus.mie " << csrs.mstatus->mie << std::endl;
@@ -1141,6 +1142,7 @@ void ISS::exec_step() {
                 sc_core::wait(wfi_event);
             break;
 
+#if 0
         case Opcode::SFENCE_VMA:
             if (s_mode() && csrs.mstatus.tvm)
                 raise_trap(EXC_ILLEGAL_INSTR, instr.data());
