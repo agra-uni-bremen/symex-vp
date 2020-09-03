@@ -20,7 +20,7 @@ cp debug-patches-systemc-2.3.3/sc_thread_process.cpp systemc-$version/src/sysc/k
 cp debug-patches-systemc-2.3.3/sc_method_process.h systemc-$version/src/sysc/kernel/
 cd systemc-$version
 mkdir build && cd build
-../configure CXXFLAGS='-std=c++14' --prefix=$PREFIX --enable-debug --with-arch-suffix=
+../configure CXXFLAGS='-std=c++17' --prefix=$PREFIX --enable-debug --with-arch-suffix=
 make -j8
 make install
 
