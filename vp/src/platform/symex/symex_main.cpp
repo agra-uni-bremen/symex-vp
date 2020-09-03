@@ -57,6 +57,10 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 		// TODO: Reset memory too.
 		sim_tracer->reset();
 
+		// TODO: sc_event::none holds the current simulation
+		// context as well, it needs to be reset too somehow.
+		//sc_core::sc_event::none.~sc_event();
+
 		// Reset SystemC simulation context
 		if (sc_core::sc_curr_simcontext)
 			delete sc_core::sc_curr_simcontext;
