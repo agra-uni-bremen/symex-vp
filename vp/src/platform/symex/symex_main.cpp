@@ -140,15 +140,23 @@ int sc_main(int argc, char **argv) {
 	std::vector<debug_target_if *> threads;
 	threads.push_back(&core);
 
+	GDBServerRunner *grunner = nullptr;
+	DirectCoreRunner *drunner = nullptr;
 	if (opt.use_debug_runner) {
 		auto server = new GDBServer("GDBServer", threads, &dbg_if, opt.debug_port);
-		new GDBServerRunner("GDBRunner", server, &core);
+		grunner = new GDBServerRunner("GDBRunner", server, &core);
 	} else {
-		new DirectCoreRunner(core);
+		drunner = new DirectCoreRunner(core);
 	}
 
 	sc_core::sc_start();
 	core.show();
+
+	for (auto mapping : bus.ports)
+		delete mapping;
+
+	if (grunner) delete grunner;
+	if (drunner) delete drunner;
 
 	return 0;
 }
