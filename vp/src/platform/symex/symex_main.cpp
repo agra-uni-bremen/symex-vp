@@ -54,7 +54,6 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 	do {
 		printf("\n##\n# %zuth concolic execution\n##\n", ++paths_found);
 
-		// TODO: Reset memory too.
 		sim_tracer->reset();
 
 		// TODO: sc_event::none holds the current simulation
