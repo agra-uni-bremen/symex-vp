@@ -289,11 +289,13 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	}
 
 	Concolic load_uhalf(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(uint16_t))->zext(32);
+		auto r = symbolic_load_data(addr, sizeof(uint16_t));
+		return (r->getWidth() < 32) ? r->zext(32) : r;
 	}
 
 	Concolic load_ubyte(Concolic addr) override {
-		return symbolic_load_data(addr, sizeof(uint8_t))->zext(32);
+		auto r = symbolic_load_data(addr, sizeof(uint8_t));
+		return (r->getWidth() < 32) ? r->zext(32): r ;
 	}
 
 	void store_word(Concolic addr, Concolic value) override {
