@@ -471,7 +471,6 @@ void ISS::exec_step() {
 			}
 		} break;
 
-#if 0
 		case Opcode::CSRRC: {
 			auto addr = instr.csr();
 			auto rs1 = instr.rs1();
@@ -480,15 +479,14 @@ void ISS::exec_step() {
                 RAISE_ILLEGAL_INSTRUCTION();
 			} else {
 				auto rd = instr.rd();
-				auto rs1_val = regs[rs1];
+				auto rs1_val = solver.evalValue<uint32_t>(regs[rs1]->concrete);
 				auto csr_val = get_csr_value(addr);
 				if (rd != RegFile::zero)
-					regs[rd] = csr_val;
+					regs.write(rd, solver.BVC(std::nullopt, csr_val));
 				if (write)
 					set_csr_value(addr, csr_val & ~rs1_val);
 			}
 		} break;
-#endif
 
 
 		case Opcode::CSRRWI: {
