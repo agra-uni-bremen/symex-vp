@@ -1,0 +1,145 @@
+From de3ed8473d9e2b9df30fc0fa2cf63996d1149819 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <tempel@uni-bremen.de>
+Date: Wed, 9 Sep 2020 14:51:06 +0200
+Subject: [PATCH] sc_event::none - convert from global variable to function
+
+The sc_event::none variable was introduced in
+55da81d96e73ea8bccad1dbab59c1bae92cee661. The problem with the
+introduced implementation is that the created event contains a
+reference to the simulation context. This simulation context is created
+by the sc_event constructor through the invocation of
+sc_get_curr_simcontext() on program startup.
+
+Previously, it was possible to reset the simulation context by setting
+the global sc_curr_simcontext variable to NULL after each invocation of
+sc_elab_and_sim(). This caused sc_get_curr_simcontext() to allocate and
+return a new context on the first invocation thereafter. However, with
+the introduced sc_event::none change, the none event will always hold a
+reference to the initial (possibly freed) sc_curr_simcontext.
+
+This commit proposes a change which tracks the none event as part of the
+simulation context. The change converts sc_event::none to a static
+member function which returns a reference to the m_none member of the
+current simulation context.
+
+Neither sc_event::none nor sc_get_curr_simcontext() are currently
+mandated by IEEE Std 1666-2011. For this reason, this change should not
+affected existing standard-conforming SystemC programs.
+---
+ src/sysc/communication/sc_event_finder.h                 | 2 +-
+ src/sysc/communication/sc_interface.cpp                  | 2 +-
+ src/sysc/kernel/sc_event.cpp                             | 3 ---
+ src/sysc/kernel/sc_event.h                               | 9 +++++++--
+ src/sysc/kernel/sc_simcontext.cpp                        | 4 ++++
+ src/sysc/kernel/sc_simcontext.h                          | 2 ++
+ .../tlm_1/tlm_req_rsp/tlm_ports/tlm_event_finder.h       | 2 +-
+ 7 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/src/sysc/communication/sc_event_finder.h b/src/sysc/communication/sc_event_finder.h
+index 27f129bb..45663230 100644
+--- a/src/sysc/communication/sc_event_finder.h
++++ b/src/sysc/communication/sc_event_finder.h
+@@ -150,7 +150,7 @@ sc_event_finder_t<IF>::find_event( sc_interface* if_p ) const
+                                  dynamic_cast<const IF*>( port().get_interface() );
+     if( iface == 0 ) {
+         report_error( SC_ID_FIND_EVENT_, "port is not bound" );
+-        return sc_event::none;
++        return sc_event::none();
+     }
+     return (const_cast<IF*>( iface )->*m_event_method) ();
+ }
+diff --git a/src/sysc/communication/sc_interface.cpp b/src/sysc/communication/sc_interface.cpp
+index 7f7b8a62..f876870f 100644
+--- a/src/sysc/communication/sc_interface.cpp
++++ b/src/sysc/communication/sc_interface.cpp
+@@ -52,7 +52,7 @@ const sc_event&
+ sc_interface::default_event() const
+ {
+     SC_REPORT_WARNING( SC_ID_NO_DEFAULT_EVENT_, 0 );
+-    return sc_event::none;
++    return sc_event::none();
+ }
+ 
+ 
+diff --git a/src/sysc/kernel/sc_event.cpp b/src/sysc/kernel/sc_event.cpp
+index 3d36ef04..eca6198a 100644
+--- a/src/sysc/kernel/sc_event.cpp
++++ b/src/sysc/kernel/sc_event.cpp
+@@ -52,9 +52,6 @@ using std::strncmp;
+ //  The event class.
+ // ----------------------------------------------------------------------------
+ 
+-// kernel-internal event, that is never notified
+-const sc_event sc_event::none( kernel_event, "none" );
+-
+ const char*
+ sc_event::basename() const
+ {
+diff --git a/src/sysc/kernel/sc_event.h b/src/sysc/kernel/sc_event.h
+index 8387b936..f6f5aaff 100644
+--- a/src/sysc/kernel/sc_event.h
++++ b/src/sysc/kernel/sc_event.h
+@@ -300,8 +300,13 @@ public:
+     // has this event been triggered in the current delta cycle?
+     bool triggered() const;
+ 
+-    // never notified event
+-    static const sc_event none;
++    // returns never notified event
++    static const sc_event& none(void) {
++        sc_simcontext *sc = sc_get_curr_simcontext();
++        if (!sc->m_none_event)
++            sc->m_none_event = new sc_event(sc_event::kernel_event, "none");
++        return *sc->m_none_event;
++    }
+ 
+ private:
+ 
+diff --git a/src/sysc/kernel/sc_simcontext.cpp b/src/sysc/kernel/sc_simcontext.cpp
+index ed958e97..6f7b398d 100644
+--- a/src/sysc/kernel/sc_simcontext.cpp
++++ b/src/sysc/kernel/sc_simcontext.cpp
+@@ -358,6 +358,7 @@ sc_simcontext::init()
+     m_method_invoker_p = NULL;
+     m_cor = 0;
+     m_reset_finder_q = 0;
++    m_none_event = NULL;
+     m_in_simulator_control = false;
+     m_start_of_simulation_called = false;
+     m_end_of_simulation_called = false;
+@@ -370,6 +371,9 @@ sc_simcontext::clean()
+     // remove remaining zombie processes
+     do_collect_processes();
+ 
++    if (m_none_event)
++        delete m_none_event;
++
+     delete m_method_invoker_p;
+     delete m_error;
+     delete m_cor_pkg;
+diff --git a/src/sysc/kernel/sc_simcontext.h b/src/sysc/kernel/sc_simcontext.h
+index 9fc12d2b..edde987f 100644
+--- a/src/sysc/kernel/sc_simcontext.h
++++ b/src/sysc/kernel/sc_simcontext.h
+@@ -399,6 +399,8 @@ private:
+ 
+     sc_reset_finder*            m_reset_finder_q; // Q of reset finders to reconcile.
+ 
++    sc_event*                   m_none_event; // never notified event
++
+ private:
+ 
+     // disabled
+diff --git a/src/tlm_core/tlm_1/tlm_req_rsp/tlm_ports/tlm_event_finder.h b/src/tlm_core/tlm_1/tlm_req_rsp/tlm_ports/tlm_event_finder.h
+index 4ca04285..406489b9 100644
+--- a/src/tlm_core/tlm_1/tlm_req_rsp/tlm_ports/tlm_event_finder.h
++++ b/src/tlm_core/tlm_1/tlm_req_rsp/tlm_ports/tlm_event_finder.h
+@@ -66,7 +66,7 @@ tlm_event_finder_t<IF,T>::find_event( sc_core::sc_interface* if_p ) const
+                                  dynamic_cast<const IF*>( port().get_interface() );
+     if( iface == 0 ) {
+         report_error( sc_core::SC_ID_FIND_EVENT_, "port is not bound" );
+-        return sc_core::sc_event::none;
++        return sc_core::sc_event::none();
+     }
+     return (const_cast<IF*>( iface )->*m_event_method) ( 0 );
+ }

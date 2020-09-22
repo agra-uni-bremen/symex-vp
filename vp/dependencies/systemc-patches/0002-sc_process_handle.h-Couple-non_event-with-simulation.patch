@@ -1,0 +1,102 @@
+From 1b1432c1235c266f2ad63e99986af5b4ab07f0b7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <tempel@uni-bremen.de>
+Date: Tue, 22 Sep 2020 12:38:30 +0200
+Subject: [PATCH] sc_process_handle.h: Couple non_event with simulation context
+
+This reduces global state in SystemC (see also: last commit).
+---
+ src/sysc/kernel/sc_process.cpp      |  9 ++++++++-
+ src/sysc/kernel/sc_process_handle.h | 10 +++++-----
+ src/sysc/kernel/sc_simcontext.cpp   |  4 ++++
+ src/sysc/kernel/sc_simcontext.h     |  1 +
+ 4 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/src/sysc/kernel/sc_process.cpp b/src/sysc/kernel/sc_process.cpp
+index bc3c12ad..66bdefa6 100644
+--- a/src/sysc/kernel/sc_process.cpp
++++ b/src/sysc/kernel/sc_process.cpp
+@@ -47,7 +47,14 @@ namespace sc_core {
+ 
+ std::vector<sc_event*>  sc_process_handle::empty_event_vector;
+ std::vector<sc_object*> sc_process_handle::empty_object_vector;
+-sc_event                sc_process_handle::non_event( sc_event::kernel_event );
++
++// If m_target_p == 0.
++sc_event &sc_process_handle::non_event(void) const {
++    sc_simcontext *sc = sc_get_curr_simcontext();
++    if (!sc->m_non_event)
++        sc->m_non_event = new sc_event(sc_event::kernel_event);
++    return *sc->m_non_event;
++}
+ 
+ // Last process that was created:
+ 
+diff --git a/src/sysc/kernel/sc_process_handle.h b/src/sysc/kernel/sc_process_handle.h
+index a70fe070..cc299646 100644
+--- a/src/sysc/kernel/sc_process_handle.h
++++ b/src/sysc/kernel/sc_process_handle.h
+@@ -147,9 +147,9 @@ class SC_API sc_process_handle {
+     sc_process_b* m_target_p;   // Target for this object instance.
+ 
+   protected:
+-    static std::vector<sc_event*>  empty_event_vector;  // If m_target_p == 0.
+-    static std::vector<sc_object*> empty_object_vector; // If m_target_p == 0.
+-    static sc_event                non_event;           // If m_target_p == 0.
++    static std::vector<sc_event*>  empty_event_vector;    // If m_target_p == 0.
++    static std::vector<sc_object*> empty_object_vector;   // If m_target_p == 0.
++    sc_event&                      non_event(void) const; // If m_target_p == 0.
+ };
+ 
+ inline bool operator == (
+@@ -401,7 +401,7 @@ inline sc_event& sc_process_handle::reset_event() const
+     else
+     {
+         SC_REPORT_WARNING( SC_ID_EMPTY_PROCESS_HANDLE_, "reset()");
+-        return sc_process_handle::non_event;
++        return sc_process_handle::non_event();
+     }
+ }
+ 
+@@ -478,7 +478,7 @@ inline sc_event& sc_process_handle::terminated_event()
+     else
+     {
+         SC_REPORT_WARNING( SC_ID_EMPTY_PROCESS_HANDLE_, "terminated_event()");
+-        return sc_process_handle::non_event;
++        return sc_process_handle::non_event();
+     }
+ }
+ 
+diff --git a/src/sysc/kernel/sc_simcontext.cpp b/src/sysc/kernel/sc_simcontext.cpp
+index 6f7b398d..fbc38d8f 100644
+--- a/src/sysc/kernel/sc_simcontext.cpp
++++ b/src/sysc/kernel/sc_simcontext.cpp
+@@ -359,6 +359,7 @@ sc_simcontext::init()
+     m_cor = 0;
+     m_reset_finder_q = 0;
+     m_none_event = NULL;
++    m_non_event = NULL;
+     m_in_simulator_control = false;
+     m_start_of_simulation_called = false;
+     m_end_of_simulation_called = false;
+@@ -399,6 +400,9 @@ sc_simcontext::clean()
+         m_reset_finder_q = rf->m_next_p;
+         delete rf;
+     }
++
++    if (m_non_event)
++        delete m_non_event;
+ }
+ 
+ 
+diff --git a/src/sysc/kernel/sc_simcontext.h b/src/sysc/kernel/sc_simcontext.h
+index edde987f..2911b9a7 100644
+--- a/src/sysc/kernel/sc_simcontext.h
++++ b/src/sysc/kernel/sc_simcontext.h
+@@ -400,6 +400,7 @@ private:
+     sc_reset_finder*            m_reset_finder_q; // Q of reset finders to reconcile.
+ 
+     sc_event*                   m_none_event; // never notified event
++    sc_event*                   m_non_event;  // used by sc_process_handle if m_target_p == 0
+ 
+ private:
+ 

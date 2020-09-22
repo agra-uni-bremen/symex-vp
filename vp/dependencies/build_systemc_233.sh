@@ -14,6 +14,11 @@ fi
 
 tar xzf $source
 cd systemc-$version
+for patch in ../systemc-patches/*.patch; do
+	echo "Applying patch ${patch##*/}..."
+	patch -p1 -i "${patch}"
+done
+
 mkdir build && cd build
 ../configure CXXFLAGS='-std=c++17' --prefix=$PREFIX --with-arch-suffix=
 make -j$NPROCS
