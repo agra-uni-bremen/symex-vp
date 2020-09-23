@@ -75,7 +75,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	void _do_transaction(tlm::tlm_command cmd, uint64_t addr, Concolic &data, size_t num_bytes) {
 		uint8_t buf[num_bytes];
 		if (cmd == tlm::TLM_WRITE_COMMAND)
-			concolic_to_bytes(data, &buf[0], num_bytes);
+			iss.solver.BVCToBytes(data, &buf[0], num_bytes);
 		else
 			memset(&buf, 0, num_bytes);
 
@@ -100,7 +100,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		if (extension) {
 			data = extension->getValue(); // XXX: free extension?!
 		} else {
-			data = bytes_to_concolic(&buf[0], num_bytes);
+			data = iss.solver.BVC(&buf[0], num_bytes);
 		}
 	}
 
@@ -112,21 +112,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		trans.set_data_length(num_bytes);
 		trans.set_response_status(tlm::TLM_OK_RESPONSE);
 
-		if (cmd == tlm::TLM_WRITE_COMMAND) {
-			Concolic cdata = bytes_to_concolic(data, num_bytes);
-			SymbolicExtension *extension = new SymbolicExtension(cdata);
-			trans.set_extension(extension);
-		}
-
 		_do_transaction(trans);
-		if (cmd == tlm::TLM_WRITE_COMMAND)
-			return;
-
-		SymbolicExtension *extension;
-		trans.get_extension(extension);
-		if (extension) {
-			concolic_to_bytes(extension->getValue(), data, num_bytes);
-		}
 	}
 
 	template <typename T>
@@ -250,31 +236,6 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		_store_data(addr, value);
 	}
 #endif
-
-	Concolic bytes_to_concolic(uint8_t *buf, size_t buflen) {
-		Concolic result = nullptr;
-		for (size_t i = 0; i < buflen; i++) {
-			auto byte = iss.solver.BVC(std::nullopt, (uint8_t)buf[i]);
-			if (!result) {
-				result = byte;
-			} else {
-				result = byte->concat(result);
-			}
-		}
-
-		return result;
-	}
-
-	void concolic_to_bytes(Concolic value, uint8_t *buf, size_t buflen) {
-		if (value->getWidth() < buflen * 8)
-			value = value->zext(buflen * 8);
-
-		for (size_t i = 0; i < buflen; i++) {
-			// Extract expression works on bit indicies and bit sizes
-			auto byte = value->extract(i * 8, klee::Expr::Int8);
-			buf[i] = iss.solver.evalValue<uint8_t>(byte->concrete);
-		}
-	}
 
 	Concolic load_word(Concolic addr) override {
 		return symbolic_load_data(addr, sizeof(int32_t))->sext(32);

@@ -27,31 +27,34 @@ SymbolicMemory::load_zero(uint64_t dst_addr, size_t n)
 unsigned
 SymbolicMemory::read_data(tlm::tlm_generic_payload &trans)
 {
-	uint64_t addr = trans.get_address();
 	auto size = trans.get_data_length();
 
-	auto data = memory.load(addr, size);
+	auto data = memory.load(trans.get_address(), size);
 	SymbolicExtension *extension = new SymbolicExtension(data);
 
+	solver.BVCToBytes(data, trans.get_data_ptr(), trans.get_data_length());
 	trans.set_extension(extension);
+
+	assert(size * 8 == data->getWidth());
 	return size;
 }
 
 unsigned
 SymbolicMemory::write_data(tlm::tlm_generic_payload &trans)
 {
-	uint64_t addr = trans.get_address();
+	std::shared_ptr<clover::ConcolicValue> value;
 	auto size = trans.get_data_length();
 
 	SymbolicExtension *extension;
 	trans.get_extension(extension);
 
-	if (!extension) {
-		trans.set_response_status(tlm::TLM_GENERIC_ERROR_RESPONSE);
-		return 0;
-	}
+	if (extension)
+		value = extension->getValue();
+	else
+		value = solver.BVC(trans.get_data_ptr(), size);
+	memory.store(trans.get_address(), value, size);
 
-	memory.store(addr, extension->getValue(), size);
+	assert(size * 8 == value->getWidth());
 	return size;
 }
 
