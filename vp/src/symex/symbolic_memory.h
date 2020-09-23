@@ -28,8 +28,8 @@ public:
 	void load_zero(uint64_t dst_addr, size_t n) override;
 
 private:
-	unsigned read_data(tlm::tlm_generic_payload &trans, uint64_t addr, size_t size);
-	unsigned write_data(tlm::tlm_generic_payload &trans, uint64_t addr, size_t size);
+	unsigned read_data(tlm::tlm_generic_payload &trans);
+	unsigned write_data(tlm::tlm_generic_payload &trans);
 
 protected:
 	void transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &delay);

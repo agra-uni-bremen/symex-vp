@@ -25,8 +25,11 @@ SymbolicMemory::load_zero(uint64_t dst_addr, size_t n)
 }
 
 unsigned
-SymbolicMemory::read_data(tlm::tlm_generic_payload &trans, uint64_t addr, size_t size)
+SymbolicMemory::read_data(tlm::tlm_generic_payload &trans)
 {
+	uint64_t addr = trans.get_address();
+	auto size = trans.get_data_length();
+
 	auto data = memory.load(addr, size);
 	SymbolicExtension *extension = new SymbolicExtension(data);
 
@@ -35,8 +38,11 @@ SymbolicMemory::read_data(tlm::tlm_generic_payload &trans, uint64_t addr, size_t
 }
 
 unsigned
-SymbolicMemory::write_data(tlm::tlm_generic_payload &trans, uint64_t addr, size_t size)
+SymbolicMemory::write_data(tlm::tlm_generic_payload &trans)
 {
+	uint64_t addr = trans.get_address();
+	auto size = trans.get_data_length();
+
 	SymbolicExtension *extension;
 	trans.get_extension(extension);
 
@@ -68,9 +74,9 @@ SymbolicMemory::transport_dbg(tlm::tlm_generic_payload &trans)
 	}
 
 	if (trans.is_read()) {
-		return read_data(trans, addr, len);
+		return read_data(trans);
 	} else if (trans.is_write()) {
-		return write_data(trans, addr, len);
+		return write_data(trans);
 	}
 
 	trans.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
