@@ -1,7 +1,7 @@
 #include "symbolic_memory.h"
 
 SymbolicMemory::SymbolicMemory(sc_core::sc_module_name, clover::Solver &_solver, size_t _size)
-    : solver(_solver), memory(solver), size(_size)
+    : solver(_solver), size(_size), memory(solver)
 {
 	tsock.register_b_transport(this, &SymbolicMemory::transport);
 	tsock.register_transport_dbg(this, &SymbolicMemory::transport_dbg);
@@ -35,7 +35,6 @@ SymbolicMemory::read_data(tlm::tlm_generic_payload &trans)
 	solver.BVCToBytes(data, trans.get_data_ptr(), trans.get_data_length());
 	trans.set_extension(extension);
 
-	assert(size * 8 == data->getWidth());
 	return size;
 }
 
@@ -52,9 +51,11 @@ SymbolicMemory::write_data(tlm::tlm_generic_payload &trans)
 		value = extension->getValue();
 	else
 		value = solver.BVC(trans.get_data_ptr(), size);
+
+	// ConcolicValue may have getWith() > size * 8, however,
+	// the ConcolicMemory::store will only store size bytes.
 	memory.store(trans.get_address(), value, size);
 
-	assert(size * 8 == value->getWidth());
 	return size;
 }
 
