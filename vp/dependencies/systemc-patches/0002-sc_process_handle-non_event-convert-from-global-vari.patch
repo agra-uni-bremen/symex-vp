@@ -1,9 +1,28 @@
-From 1b1432c1235c266f2ad63e99986af5b4ab07f0b7 Mon Sep 17 00:00:00 2001
+From 73a4fa83eea51e900be1fe42c489fd7c348cf876 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <tempel@uni-bremen.de>
 Date: Tue, 22 Sep 2020 12:38:30 +0200
-Subject: [PATCH] sc_process_handle.h: Couple non_event with simulation context
+Subject: [PATCH] sc_process_handle::non_event - convert from global variable
+ to function
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-This reduces global state in SystemC (see also: last commit).
+With the previous commit applied, sc_process_handle::non_event is (to
+the best of my current knowledge) the last remaining sc_event declared
+as a global variable. As the sc_event class constructor obtains a
+reference to the global simulation context via sc_get_curr_simcontext()
+having global sc_events causes the simulation context to be initialized
+at program startup. With this commit applied, the simulation context is
+only initialized when needed.
+
+This commit couples the sc_process_handle::non_event with the simulation
+context. This allows proper resets of the simulation context by
+assigning it to NULL, causing the next invocation of
+sc_get_curr_simcontext() thereafter to allocate a new context. Without
+this commit, the sc_process_handle::non_event would contain a reference
+to a freed simulation context when doing so.
+
+Signed-off-by: Sören Tempel <tempel@uni-bremen.de>
 ---
  src/sysc/kernel/sc_process.cpp      |  9 ++++++++-
  src/sysc/kernel/sc_process_handle.h | 10 +++++-----

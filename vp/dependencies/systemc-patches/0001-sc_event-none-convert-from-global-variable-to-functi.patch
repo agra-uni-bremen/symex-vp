@@ -1,7 +1,10 @@
-From de3ed8473d9e2b9df30fc0fa2cf63996d1149819 Mon Sep 17 00:00:00 2001
+From 80c5f199a07e27096e2b5028466971b7a67662fc Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?S=C3=B6ren=20Tempel?= <tempel@uni-bremen.de>
 Date: Wed, 9 Sep 2020 14:51:06 +0200
 Subject: [PATCH] sc_event::none - convert from global variable to function
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 The sc_event::none variable was introduced in
 55da81d96e73ea8bccad1dbab59c1bae92cee661. The problem with the
@@ -25,6 +28,8 @@ current simulation context.
 Neither sc_event::none nor sc_get_curr_simcontext() are currently
 mandated by IEEE Std 1666-2011. For this reason, this change should not
 affected existing standard-conforming SystemC programs.
+
+Signed-off-by: Sören Tempel <tempel@uni-bremen.de>
 ---
  src/sysc/communication/sc_event_finder.h                 | 2 +-
  src/sysc/communication/sc_interface.cpp                  | 2 +-
