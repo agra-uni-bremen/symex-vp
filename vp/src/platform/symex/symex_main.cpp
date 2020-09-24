@@ -8,6 +8,7 @@
 #include "mem.h"
 #include "memory.h"
 #include "symbolic_memory.h"
+#include "symbolic_context.h"
 #include "symbolic_exploration.h"
 #include "syscall.h"
 #include "platform/common/options.h"
