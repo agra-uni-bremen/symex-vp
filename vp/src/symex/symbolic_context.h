@@ -10,11 +10,13 @@ private:
 	clover::ExecutionContext ctx;
 
 public:
-	SymbolicContext(clover::Solver &_solver, clover::Trace &_trace, clover::ExecutionContext &_ctx);
+	SymbolicContext(void);
 
 	clover::Solver &get_solver(void);
 	clover::Trace &get_trace(void);
 	clover::ExecutionContext &get_ctx(void);
 };
+
+extern SymbolicContext symbolic_context;
 
 #endif

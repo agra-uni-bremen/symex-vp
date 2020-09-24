@@ -8,7 +8,7 @@
 #include "mem.h"
 #include "memory.h"
 #include "symbolic_memory.h"
-#include "symbolic_context.h"
+#include "symbolic_exploration.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 
@@ -20,8 +20,6 @@
 #include <boost/program_options.hpp>
 #include <iomanip>
 #include <iostream>
-
-static SymbolicContext *sym_ctx = NULL;
 
 using namespace rv32;
 namespace po = boost::program_options;
@@ -50,49 +48,6 @@ public:
 
 };
 
-int
-run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionContext *ctx, int argc, char **argv)
-{
-	int ret;
-
-	sym_ctx = new SymbolicContext(*solver, *tracer, *ctx);
-
-	size_t paths_found = 0;
-	do {
-		printf("\n##\n# %zuth concolic execution\n##\n", ++paths_found);
-
-		tracer->reset();
-
-		// TODO: sc_event::none holds the current simulation
-		// context as well, it needs to be reset too somehow.
-		//sc_core::sc_event::none.~sc_event();
-
-		// Reset SystemC simulation context
-		if (sc_core::sc_curr_simcontext)
-			delete sc_core::sc_curr_simcontext;
-		sc_core::sc_curr_simcontext = NULL;
-
-		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
-			return ret;
-	} while (ctx->hasNewPath(*tracer));
-
-	printf("\n---\nUnique paths found: %zu\n", paths_found);
-	return 0;
-}
-
-int
-main(int argc, char **argv)
-{
-	clover::Solver solver;
-	clover::Trace tracer(solver);
-	clover::ExecutionContext ctx(solver);
-
-	// Hide SystemC copyright message
-	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
-
-	return run_simulation(&solver, &tracer, &ctx, argc, argv);
-}
-
 int sc_main(int argc, char **argv) {
 	SymexOptions opt;
 	opt.parse(argc, argv);
@@ -101,10 +56,10 @@ int sc_main(int argc, char **argv) {
 
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	ISS core(*sym_ctx, 0);
+	ISS core(symbolic_context, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SymbolicMemory mem("mem", sym_ctx->get_solver(), opt.mem_size);
+	SymbolicMemory mem("mem", symbolic_context.get_solver(), opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 3> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");
