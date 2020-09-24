@@ -33,7 +33,7 @@ main(int argc, char **argv)
 		int ret;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
-	} while (ctx.hasNewPath(tracer));
+	} while (ctx.setupNewValues(tracer));
 
 	std::cout << std::endl << "---" << std::endl;
 	std::cout << "Unique paths found: " << paths_found << std::endl;
