@@ -1,7 +1,7 @@
 #include "symbolic_memory.h"
 
 SymbolicMemory::SymbolicMemory(sc_core::sc_module_name, clover::Solver &_solver, size_t _size)
-    : solver(_solver), size(_size), memory(solver)
+    : solver(_solver), memory(solver), size(_size)
 {
 	tsock.register_b_transport(this, &SymbolicMemory::transport);
 	tsock.register_transport_dbg(this, &SymbolicMemory::transport_dbg);
