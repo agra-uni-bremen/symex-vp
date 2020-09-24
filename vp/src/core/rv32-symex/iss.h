@@ -10,6 +10,7 @@
 #include "fp.h"
 #include "mem_if.h"
 #include "syscall_if.h"
+#include "symbolic_context.h"
 #include "util/common.h"
 
 #include <assert.h>
@@ -195,7 +196,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	static constexpr int32_t REG_MIN = INT32_MIN;
     static constexpr unsigned xlen = 32;
 
-	ISS(clover::Solver &_solver, clover::ExecutionContext &_ctx, clover::Trace &_tracer, uint32_t hart_id, bool use_E_base_isa = false);
+	ISS(SymbolicContext &_ctx, uint32_t hart_id, bool use_E_base_isa = false);
 
 	void exec_step();
 

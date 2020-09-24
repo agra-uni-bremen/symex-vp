@@ -8,6 +8,7 @@
 #include "mem.h"
 #include "memory.h"
 #include "symbolic_memory.h"
+#include "symbolic_context.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 
@@ -20,9 +21,7 @@
 #include <iomanip>
 #include <iostream>
 
-static clover::Solver *sim_solver = NULL;
-static clover::Trace *sim_tracer = NULL;
-static clover::ExecutionContext *sim_ctx = NULL;
+static SymbolicContext *sym_ctx = NULL;
 
 using namespace rv32;
 namespace po = boost::program_options;
@@ -56,15 +55,13 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 {
 	int ret;
 
-	sim_solver = solver;
-	sim_tracer = tracer;
-	sim_ctx = ctx;
+	sym_ctx = new SymbolicContext(*solver, *tracer, *ctx);
 
 	size_t paths_found = 0;
 	do {
 		printf("\n##\n# %zuth concolic execution\n##\n", ++paths_found);
 
-		sim_tracer->reset();
+		tracer->reset();
 
 		// TODO: sc_event::none holds the current simulation
 		// context as well, it needs to be reset too somehow.
@@ -77,7 +74,7 @@ run_simulation(clover::Solver *solver, clover::Trace *tracer, clover::ExecutionC
 
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
-	} while (ctx->hasNewPath(*sim_tracer));
+	} while (ctx->hasNewPath(*tracer));
 
 	printf("\n---\nUnique paths found: %zu\n", paths_found);
 	return 0;
@@ -104,10 +101,10 @@ int sc_main(int argc, char **argv) {
 
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	ISS core(*sim_solver, *sim_ctx, *sim_tracer, 0);
+	ISS core(*sym_ctx, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SymbolicMemory mem("mem", *sim_solver, opt.mem_size);
+	SymbolicMemory mem("mem", sym_ctx->get_solver(), opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 3> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");
