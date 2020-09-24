@@ -39,6 +39,16 @@ public:
 	addr_t clint_end_addr = 0x0200ffff;
 	addr_t sys_start_addr = 0x02010000;
 	addr_t sys_end_addr = 0x020103ff;
+
+	bool quiet = false;
+
+	SymexOptions(void) {
+		// clang-format off
+		add_options()
+			("quiet", po::bool_switch(&quiet), "do not output register values on exit");
+        	// clang-format on
+        }
+
 };
 
 int
@@ -152,8 +162,12 @@ int sc_main(int argc, char **argv) {
 		drunner = new DirectCoreRunner(core);
 	}
 
+	if (opt.quiet)
+		 sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_NONE);
+
 	sc_core::sc_start();
-	core.show();
+	if (!opt.quiet)
+		core.show();
 
 	for (auto mapping : bus.ports)
 		delete mapping;
