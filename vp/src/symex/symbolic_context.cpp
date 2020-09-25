@@ -11,21 +11,3 @@ SymbolicContext::SymbolicContext(void)
 {
 	return;
 }
-
-clover::Solver &
-SymbolicContext::get_solver(void)
-{
-	return solver;
-}
-
-clover::Trace &
-SymbolicContext::get_trace(void)
-{
-	return trace;
-}
-
-clover::ExecutionContext &
-SymbolicContext::get_ctx(void)
-{
-	return ctx;
-}

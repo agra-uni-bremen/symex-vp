@@ -60,7 +60,7 @@ int sc_main(int argc, char **argv) {
 	ISS core(symbolic_context, 0);
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-	SymbolicMemory mem("mem", symbolic_context.get_solver(), opt.mem_size);
+	SymbolicMemory mem("mem", symbolic_context.solver, opt.mem_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 3> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");

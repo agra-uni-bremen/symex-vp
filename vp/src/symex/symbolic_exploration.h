@@ -13,8 +13,9 @@ int
 main(int argc, char **argv)
 {
 	size_t paths_found = 0;
-	auto ctx = symbolic_context.get_ctx();
-	auto tracer = symbolic_context.get_trace();
+
+	clover::ExecutionContext &ctx = symbolic_context.ctx;
+	clover::Trace &tracer = symbolic_context.trace;
 
 	// Hide SystemC copyright message
 	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
