@@ -20,6 +20,9 @@ main(int argc, char **argv)
 	// Hide SystemC copyright message
 	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
 
+	// use current time as seed for random generator
+	std::srand(std::time(nullptr));
+
 	do {
 		std::cout << std::endl << "##" << std::endl << "# "
 			<< ++paths_found << "th concolic execution" << std::endl

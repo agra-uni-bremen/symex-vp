@@ -53,8 +53,6 @@ int sc_main(int argc, char **argv) {
 	SymexOptions opt;
 	opt.parse(argc, argv);
 
-	std::srand(std::time(nullptr));  // use current time as seed for random generator
-
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
 	ISS core(symbolic_context, 0);
