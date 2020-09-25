@@ -4,6 +4,11 @@ li   a0, \exit_code
 ecall
 .endm
 
+.macro SYS_ERROR
+li   a7, 1 /* SYS_host_error */
+ecall
+.endm
+
 .macro MAKE_SYMBOLIC_REG, register
 li   a7, 95 /* SYS_sym_reg */
 li   a0, \register
