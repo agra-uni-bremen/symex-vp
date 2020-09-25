@@ -1,9 +1,11 @@
 #ifndef RISCV_ISA_EXPLORATION_H
 #define RISCV_ISA_EXPLORATION_H
 
+#include <stddef.h>
+#include <stdlib.h>
+
 #include <iostream>
 #include <systemc>
-#include <stddef.h>
 
 #include "symbolic_context.h"
 
