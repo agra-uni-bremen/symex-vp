@@ -104,11 +104,13 @@ int sc_main(int argc, char **argv) {
 	std::vector<debug_target_if *> threads;
 	threads.push_back(&core);
 
+	GDBServer *gserver = nullptr;
 	GDBServerRunner *grunner = nullptr;
 	DirectCoreRunner *drunner = nullptr;
-	if (opt.use_debug_runner) {
-		auto server = new GDBServer("GDBServer", threads, &dbg_if, opt.debug_port);
-		grunner = new GDBServerRunner("GDBRunner", server, &core);
+
+	if (opt.use_debug_runner || getenv("SYMEX_DEBUG")) {
+		gserver = new GDBServer("GDBServer", threads, &dbg_if, opt.debug_port);
+		grunner = new GDBServerRunner("GDBRunner", gserver, &core);
 	} else {
 		drunner = new DirectCoreRunner(core);
 	}
@@ -123,8 +125,9 @@ int sc_main(int argc, char **argv) {
 	for (auto mapping : bus.ports)
 		delete mapping;
 
-	if (grunner) delete grunner;
-	if (drunner) delete drunner;
+	delete grunner;
+	delete gserver;
+	delete drunner;
 
 	return 0;
 }
