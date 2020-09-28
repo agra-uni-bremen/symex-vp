@@ -6,11 +6,13 @@
 
 #include <iostream>
 #include <systemc>
+#include <filesystem>
 
+#include <clover/clover.h>
 #include "symbolic_context.h"
 
-static int main_argc;
-static char **main_argv;
+static std::filesystem::path testcase_path;
+static size_t errors_found = 0;
 
 static void
 reset_systemc(void)
@@ -25,41 +27,38 @@ reset_systemc(void)
 static void
 report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& actions)
 {
-	static bool debugging = false;
-
 	auto mtype = report.get_msg_type();
-	if (strcmp(mtype, "/AGRA/riscv-vp/host-error") || debugging) {
+	if (strcmp(mtype, "/AGRA/riscv-vp/host-error")) {
 		sc_core::sc_report_handler::default_handler(report, actions);
 		return;
 	}
 
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
-	std::cout << "Error encountered, restarting in debug mode..." << std::endl;
+	clover::ConcreteStore store = ctx.getPrevStore();
 
-	reset_systemc();
-	ctx.useOldValues();
+	auto path = testcase_path / ("error" + std::to_string(++errors_found));
+	std::ofstream file(path);
+	if (!file.is_open())
+		throw std::runtime_error("failed to open " + path.string());
 
-	// Make sure the debug runner is used in the next run
-	setenv("SYMEX_DEBUG", "1", 0);
+	clover::TestCase::toFile(store, file);
+}
 
-	// Prevent nested debugging sessions.
-	debugging = true;
+static void
+create_testdir(void)
+{
+	char *dirpath;
+	char tmpl[] = "/tmp/clover_testsXXXXXX";
 
-	// If the ISS would not modify the tracer it would be possible
-	// to continue epxloration after debugging. However, since the
-	// tracer is modified this doesn't work currently.
-	//
-	// Furthermore, I believe the best approach would be to store
-	// inputs in a file (like klee) thereby allowing debugging.
-	std::cout << "Debug interface enabled, attach with GDB" << std::endl;
-	exit(sc_core::sc_elab_and_sim(main_argc, main_argv));
+	if (!(dirpath = mkdtemp(tmpl)))
+		throw std::system_error(errno, std::generic_category());
+	testcase_path = std::filesystem::path(dirpath);
 }
 
 int
 main(int argc, char **argv)
 {
-	main_argc = argc;
-	main_argv = argv;
+	create_testdir();
 
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
 	clover::Trace &tracer = symbolic_context.trace;
@@ -89,6 +88,11 @@ main(int argc, char **argv)
 
 	std::cout << std::endl << "---" << std::endl;
 	std::cout << "Unique paths found: " << paths_found << std::endl;
+
+	if (errors_found > 0) {
+		std::cout << "Errors found: " << errors_found << std::endl;
+		std::cout << "Testcase directory: " << testcase_path << std::endl;
+	}
 
 	return 0;
 }
