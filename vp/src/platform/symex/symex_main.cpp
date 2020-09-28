@@ -9,7 +9,7 @@
 #include "memory.h"
 #include "symbolic_memory.h"
 #include "symbolic_context.h"
-#include "symbolic_exploration.h"
+#include "symbolic_explore.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 
@@ -130,4 +130,8 @@ int sc_main(int argc, char **argv) {
 	delete drunner;
 
 	return 0;
+}
+
+int main(int argc, char **argv) {
+	return symbolic_explore(argc, argv);
 }

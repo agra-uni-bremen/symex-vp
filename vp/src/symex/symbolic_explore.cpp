@@ -7,22 +7,14 @@
 #include <iostream>
 #include <systemc>
 #include <filesystem>
+#include <systemc>
 
 #include <clover/clover.h>
+#include "symbolic_explore.h"
 #include "symbolic_context.h"
 
 static std::filesystem::path testcase_path;
 static size_t errors_found = 0;
-
-static void
-reset_systemc(void)
-{
-	// Reset SystemC simulation context
-	// See also: https://github.com/accellera-official/systemc/issues/8
-	if (sc_core::sc_curr_simcontext)
-		delete sc_core::sc_curr_simcontext;
-	sc_core::sc_curr_simcontext = NULL;
-}
 
 static void
 report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& actions)
@@ -56,7 +48,7 @@ create_testdir(void)
 }
 
 int
-main(int argc, char **argv)
+symbolic_explore(int argc, char **argv)
 {
 	create_testdir();
 
@@ -79,7 +71,12 @@ main(int argc, char **argv)
 			<< "##" << std::endl;
 
 		tracer.reset();
-		reset_systemc();
+
+		// Reset SystemC simulation context
+		// See also: https://github.com/accellera-official/systemc/issues/8
+		if (sc_core::sc_curr_simcontext)
+			delete sc_core::sc_curr_simcontext;
+		sc_core::sc_curr_simcontext = NULL;
 
 		int ret;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
