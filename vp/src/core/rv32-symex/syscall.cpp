@@ -250,12 +250,12 @@ int SyscallHandler::execute_syscall(iss_syscall_if *core, uint64_t n, uint64_t _
 		case SYS_sym_mem:
 			return sys_sym_mem(core, _a0, _a1);
 
-		case SYS_exit:
-			shall_exit = true;
-			return 0;
-
 		case SYS_host_error:
 			SC_REPORT_ERROR("/AGRA/riscv-vp/host-error", "SYS_host_error");
+			[[fallthrough]];
+
+		case SYS_exit:
+			shall_exit = true;
 			return 0;
 
 		case SYS_host_test_pass:
