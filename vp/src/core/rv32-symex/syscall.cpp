@@ -256,7 +256,7 @@ int SyscallHandler::execute_syscall(iss_syscall_if *core, uint64_t n, uint64_t _
 
 		case SYS_host_error:
 			SC_REPORT_ERROR("/AGRA/riscv-vp/host-error", "SYS_host_error");
-			break;
+			return 0;
 
 		case SYS_host_test_pass:
 			std::cout << "TEST_PASS" << std::endl;
