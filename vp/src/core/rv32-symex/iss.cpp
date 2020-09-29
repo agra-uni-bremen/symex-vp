@@ -73,7 +73,7 @@ RegFile::RegValue RegFile::read(uint32_t index) {
 
 RegFile::RegValue RegFile::shamt(uint32_t index) {
 	assert(index <= x31);
-	return regs[index]->extract(0, 5);
+	return regs[index]->extract(0, 5)->zext(32);
 }
 
 const RegFile::RegValue &RegFile::operator[](const uint32_t idx) {
