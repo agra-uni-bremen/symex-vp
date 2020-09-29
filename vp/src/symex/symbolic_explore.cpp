@@ -64,25 +64,11 @@ run_test(const char *path, int argc, char **argv)
 	return sc_core::sc_elab_and_sim(argc, argv);
 }
 
-int
-symbolic_explore(int argc, char **argv)
+static size_t
+explore_paths(int argc, char **argv)
 {
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
 	clover::Trace &tracer = symbolic_context.trace;
-
-	// Hide SystemC copyright message
-	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
-
-	// Use current time as seed for random generator
-	std::srand(std::time(nullptr));
-
-	char *testcase = getenv(TESTCASE_ENV);
-	if (testcase)
-		return run_test(testcase, argc, argv);
-	create_testdir();
-
-	// Set report handler for detecting errors
-	sc_core::sc_report_handler::set_handler(report_handler);
 
 	size_t paths_found = 0;
 	do {
@@ -103,9 +89,30 @@ symbolic_explore(int argc, char **argv)
 			return ret;
 	} while (ctx.setupNewValues(tracer));
 
+	return paths_found;
+}
+
+int
+symbolic_explore(int argc, char **argv)
+{
+	// Hide SystemC copyright message
+	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
+
+	// Use current time as seed for random generator
+	std::srand(std::time(nullptr));
+
+	char *testcase = getenv(TESTCASE_ENV);
+	if (testcase)
+		return run_test(testcase, argc, argv);
+	create_testdir();
+
+	// Set report handler for detecting errors
+	sc_core::sc_report_handler::set_handler(report_handler);
+
+	size_t paths_found = explore_paths(argc, argv);
+
 	std::cout << std::endl << "---" << std::endl;
 	std::cout << "Unique paths found: " << paths_found << std::endl;
-
 	if (errors_found > 0) {
 		std::cout << "Errors found: " << errors_found << std::endl;
 		std::cout << "Testcase directory: " << *testcase_path << std::endl;
