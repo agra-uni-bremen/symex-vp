@@ -33,6 +33,8 @@ report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& acti
 
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
 	clover::ConcreteStore store = ctx.getPrevStore();
+	if (store.empty())
+		return; // Execution does not depend on symbolic values
 
 	auto path = *testcase_path / ("error" + std::to_string(++errors_found));
 	std::ofstream file(path);
