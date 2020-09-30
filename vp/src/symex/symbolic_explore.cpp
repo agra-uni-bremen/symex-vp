@@ -1,9 +1,12 @@
 #ifndef RISCV_ISA_EXPLORATION_H
 #define RISCV_ISA_EXPLORATION_H
 
+#include <assert.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <systemc>
@@ -40,6 +43,21 @@ report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& acti
 }
 
 static void
+remove_testdir(void)
+{
+	assert(testcase_path != nullptr);
+	if (errors_found > 0)
+		return;
+
+	// Remove test directory if no errors were found
+	if (rmdir(testcase_path->c_str()) == -1)
+		throw std::system_error(errno, std::generic_category());
+
+	delete testcase_path;
+	testcase_path = nullptr;
+}
+
+static void
 create_testdir(void)
 {
 	char *dirpath;
@@ -48,6 +66,9 @@ create_testdir(void)
 	if (!(dirpath = mkdtemp(tmpl)))
 		throw std::system_error(errno, std::generic_category());
 	testcase_path = new std::filesystem::path(dirpath);
+
+	if (std::atexit(remove_testdir))
+		throw std::runtime_error("std::atexit failed");
 }
 
 static int
