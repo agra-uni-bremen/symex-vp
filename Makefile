@@ -1,7 +1,7 @@
 NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
 
-vps: vp/src/core/common/gdb-mc/libgdb/mpc/mpc.c vp/dependencies/systemc-dist vp/dependencies/softfloat-dist vp/build/Makefile
-	make install -C vp/build -j$(NPROCS)
+vps: vp/src/core/common/gdb-mc/libgdb/mpc/mpc.c vp/src/symex/clover/README.md vp/dependencies/systemc-dist vp/dependencies/softfloat-dist vp/build/Makefile
+	make -C vp/build -j$(NPROCS)
 
 vp/dependencies/systemc-dist:
 	cd vp/dependencies/ && ./build_systemc_233.sh
@@ -12,11 +12,14 @@ vp/dependencies/softfloat-dist:
 vp/src/core/common/gdb-mc/libgdb/mpc/mpc.c:
 	git submodule update --init vp/src/core/common/gdb-mc/libgdb/mpc
 
+vp/src/symex/clover/README.md:
+	git submodule update --init vp/src/symex/clover
+
 all: vps vp-display vp-breadboard
 
 vp/build/Makefile:
 	mkdir vp/build || true
-	cd vp/build && cmake ..
+	cd vp/build && cmake -DSYMEX_BACKEND=ON ..
 
 vp-eclipse:
 	mkdir vp-eclipse || true
