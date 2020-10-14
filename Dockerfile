@@ -1,3 +1,8 @@
-FROM klee/klee
+FROM alpine:edge
 
-RUN sudo apt-get update && sudo apt-get -y install gdb valgrind libboost-all-dev wget
+RUN apk update && apk add --no-cache -X "https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
+	build-base cmake boost-dev bash z3-dev llvm10-dev git gcc-riscv-none-elf
+RUN adduser -G users -g 'RISC-V VP User' -D riscv-vp
+ADD --chown=riscv-vp:users . /home/riscv-vp/riscv-vp
+RUN su - riscv-vp -c 'make -C /home/riscv-vp/riscv-vp'
+CMD su - riscv-vp
