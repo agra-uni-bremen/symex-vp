@@ -19,7 +19,7 @@ all: vps vp-display vp-breadboard
 
 vp/build/Makefile:
 	mkdir vp/build || true
-	cd vp/build && cmake -DSYMEX_BACKEND=ON ..
+	cd vp/build && cmake -DCMAKE_BUILD_TYPE=Release -DSYMEX_BACKEND=ON ..
 
 vp-eclipse:
 	mkdir vp-eclipse || true
