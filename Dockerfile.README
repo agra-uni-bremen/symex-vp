@@ -1,6 +1,6 @@
 ## Dockerfile
 
 	$ docker build -t riscv-symex .
-	$ docker run --rm -v $(pwd):/home/klee/riscv-vp -it riscv-symex:latest
+	$ docker run --rm -v $(pwd):/home/riscv-vp/riscv-vp -it riscv-symex
 
 Inside the docker images cd into `~/cppsim` and build as usual.
