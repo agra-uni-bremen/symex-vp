@@ -9,6 +9,4 @@ subdirs(test32)
 subdirs(linux)
 subdirs(linux32)
 
-if(SYMEX_BACKEND)
-	subdirs(symex)
-endif()
+subdirs(symex)

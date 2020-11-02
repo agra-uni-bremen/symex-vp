@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.12)
 project(riscv-vp)
 
 option(USE_SYSTEM_SYSTEMC "use systemc version provided by the system" OFF)
-option(SYMEX_BACKEND "enable symbolic execution backend (requires KLEE)" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
