@@ -24,9 +24,29 @@
 #include "symbolic_context.h"
 
 #define TESTCASE_ENV "SYMEX_TESTCASE"
+#define ERR_EXIT_ENV "SYMEX_ERREXIT"
 
 static std::filesystem::path *testcase_path = nullptr;
 static size_t errors_found = 0;
+
+static std::optional<std::string>
+dump_input(std::string fn)
+{
+	clover::ExecutionContext &ctx = symbolic_context.ctx;
+	clover::ConcreteStore store = ctx.getPrevStore();
+	if (store.empty())
+		return std::nullopt; // Execution does not depend on symbolic values
+
+	assert(testcase_path);
+	auto path = *testcase_path / fn;
+
+	std::ofstream file(path);
+	if (!file.is_open())
+		throw std::runtime_error("failed to open " + path.string());
+
+	clover::TestCase::toFile(store, file);
+	return path;
+}
 
 static void
 report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& actions)
@@ -37,17 +57,15 @@ report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& acti
 		return;
 	}
 
-	clover::ExecutionContext &ctx = symbolic_context.ctx;
-	clover::ConcreteStore store = ctx.getPrevStore();
-	if (store.empty())
-		return; // Execution does not depend on symbolic values
+	auto path = dump_input("error" + std::to_string(++errors_found));
+	if (!path.has_value())
+		return;
 
-	auto path = *testcase_path / ("error" + std::to_string(++errors_found));
-	std::ofstream file(path);
-	if (!file.is_open())
-		throw std::runtime_error("failed to open " + path.string());
-
-	clover::TestCase::toFile(store, file);
+	if (getenv(ERR_EXIT_ENV)) {
+		std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
+		std::cerr << "Exit on first error set, terminating..." << std::endl;
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void
