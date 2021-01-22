@@ -97,7 +97,7 @@ void RegFile::show() {
 		}
 
 		uint32_t bvv = solver.evalValue<uint32_t>(regs[i]->concrete);
-		printf("r[%zu] = (%s, %" PRIu32 ")\n", i, bvs.c_str(), bvv);
+		printf("%s = (%s, %" PRIx32 ")\n", regnames[i], bvs.c_str(), bvv);
 	}
 }
 
