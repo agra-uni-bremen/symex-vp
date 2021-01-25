@@ -4,7 +4,7 @@
 #include "aon.h"
 #include "can.h"
 #include "core/common/clint.h"
-#include "core/rv32/syscall.h"
+#include "syscall.h"
 #include "elf_loader.h"
 #include "fe310_plic.h"
 #include "debug_memory.h"
@@ -13,6 +13,9 @@
 #include "maskROM.h"
 #include "mem.h"
 #include "memory.h"
+#include "symbolic_memory.h"
+#include "symbolic_context.h"
+#include "symbolic_explore.h"
 #include "prci.h"
 #include "slip.h"
 #include "spi.h"
@@ -23,6 +26,7 @@
 #include "gdb-mc/gdb_server.h"
 #include "gdb-mc/gdb_runner.h"
 
+#include <clover/clover.h>
 #include <boost/io/ios_state.hpp>
 #include <boost/program_options.hpp>
 #include <iomanip>
@@ -84,6 +88,8 @@ public:
 	bool enable_can = false;
 	std::string tun_device = "tun0";
 
+	size_t pktsize = 45;
+
 	HifiveOptions(void) {
         	// clang-format off
 		add_options()
@@ -97,17 +103,17 @@ int sc_main(int argc, char **argv) {
 	HifiveOptions opt;
 	opt.parse(argc, argv);
 
-	std::srand(std::time(nullptr));  // use current time as seed for random generator
-
 	tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-	ISS core(0);
-	SimpleMemory dram("DRAM", opt.dram_size);
+	ISS core(symbolic_context, 0);
+	SymbolicMemory dram("DRAM", symbolic_context.solver, opt.dram_size);
 	SimpleMemory flash("Flash", opt.flash_size);
 	ELFLoader loader(opt.input_program.c_str());
 	SimpleBus<2, 14> bus("SimpleBus");
 	CombinedMemoryInterface iss_mem_if("MemoryInterface", core);
 	SyscallHandler sys("SyscallHandler");
+
+	std::vector<clint_interrupt_target*> clint_targets {&core};
 
 	FE310_PLIC<1, 53, 64, 7> plic("PLIC");
 	CLINT<1> clint("CLINT");
@@ -129,19 +135,15 @@ int sc_main(int argc, char **argv) {
 	MaskROM maskROM("MASKROM");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
-	MemoryDMI dram_dmi = MemoryDMI::create_start_size_mapping(dram.data, opt.dram_start_addr, dram.size);
-	MemoryDMI flash_dmi = MemoryDMI::create_start_size_mapping(flash.data, opt.flash_start_addr, flash.size);
-	InstrMemoryProxy instr_mem(flash_dmi, core);
-
 	std::shared_ptr<BusLock> bus_lock = std::make_shared<BusLock>();
 	iss_mem_if.bus_lock = bus_lock;
 
 	instr_memory_if *instr_mem_if = &iss_mem_if;
 	data_memory_if *data_mem_if = &iss_mem_if;
-	if (opt.use_instr_dmi)
-		instr_mem_if = &instr_mem;
-	if (opt.use_data_dmi)
-		iss_mem_if.dmi_ranges.emplace_back(dram_dmi);
+	if (opt.use_instr_dmi || opt.use_data_dmi) {
+		std::cerr << "DMI not supported by symbolic execution backend" << std::endl;
+		return 1;
+	}
 
 	bus.ports[0] = new PortMapping(opt.flash_start_addr, opt.flash_end_addr);
 	bus.ports[1] = new PortMapping(opt.dram_start_addr, opt.dram_end_addr);
@@ -160,7 +162,7 @@ int sc_main(int argc, char **argv) {
 
 	loader.load_executable_image(flash, flash.size, opt.flash_start_addr, false);
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
-	sys.init(dram.data, opt.dram_start_addr, loader.get_heap_addr());
+	sys.init(nullptr, 0, loader.get_heap_addr());
 	sys.register_core(&core);
 
 	if (opt.intercept_syscalls)
@@ -186,7 +188,6 @@ int sc_main(int argc, char **argv) {
 
 	// connect interrupt signals/communication
 	plic.target_harts[0] = &core;
-	clint.target_harts[0] = &core;
 	gpio0.plic = &plic;
 	uart0.plic = &plic;
 	slip.plic = &plic;
@@ -194,17 +195,28 @@ int sc_main(int argc, char **argv) {
 	std::vector<debug_target_if *> threads;
 	threads.push_back(&core);
 
+	GDBServerRunner *grunner = nullptr;
+	DirectCoreRunner *drunner = nullptr;
+
 	core.trace = opt.trace_mode;  // switch for printing instructions
 	if (opt.use_debug_runner) {
 		auto server = new GDBServer("GDBServer", threads, &dbg_if, opt.debug_port);
-		new GDBServerRunner("GDBRunner", server, &core);
+		grunner = new GDBServerRunner("GDBRunner", server, &core);
 	} else {
-		new DirectCoreRunner(core);
+		drunner = new DirectCoreRunner(core);
 	}
 
 	sc_core::sc_start();
 
-	core.show();
+	for (auto mapping : bus.ports)
+		delete mapping;
+
+	delete grunner;
+	delete drunner;
 
 	return 0;
+}
+
+int main(int argc, char **argv) {
+	return symbolic_explore(argc, argv);
 }
