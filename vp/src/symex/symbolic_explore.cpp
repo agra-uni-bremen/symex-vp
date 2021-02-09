@@ -8,6 +8,12 @@
 #include <string.h>
 #include <unistd.h>
 
+/* Debug leaks with valgrind --leak-check=full --undef-value-errors=no
+ * Also: Define valgrind here to prevent spurious Z3 memory leaks. */
+#ifdef VALGRIND
+#include <z3.h>
+#endif
+
 #include <iostream>
 #include <systemc>
 #include <filesystem>
@@ -141,6 +147,10 @@ symbolic_explore(int argc, char **argv)
 		std::cout << "Errors found: " << errors_found << std::endl;
 		std::cout << "Testcase directory: " << *testcase_path << std::endl;
 	}
+
+#ifdef VALGRIND
+	Z3_finalize_memory();
+#endif
 
 	return 0;
 }
