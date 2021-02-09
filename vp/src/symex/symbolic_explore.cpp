@@ -119,6 +119,7 @@ explore_paths(int argc, char **argv)
 			return ret;
 	} while (ctx.setupNewValues(tracer));
 
+	delete sc_core::sc_curr_simcontext;
 	return paths_found;
 }
 
