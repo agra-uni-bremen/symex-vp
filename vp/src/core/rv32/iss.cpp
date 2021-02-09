@@ -65,6 +65,10 @@ using namespace rv32;
 #define U_IMM solver.BVC(std::nullopt, (uint32_t)instr.U_imm()) /* XXX: sext? */
 #define SHAMT solver.BVC(std::nullopt, (uint32_t)instr.shamt())
 
+#define REG_UINT32_MAX solver.BVC(std::nullopt, (uint32_t)-1)
+#define REG_INT32_MIN solver.BVC(std::nullopt, (uint32_t)REG_MIN)
+#define REG_ZERO solver.BVC(std::nullopt, (uint32_t)0)
+
 const char *regnames[] = {
     "zero (x0)", "ra   (x1)", "sp   (x2)", "gp   (x3)", "tp   (x4)", "t0   (x5)", "t1   (x6)", "t2   (x7)",
     "s0/fp(x8)", "s1   (x9)", "a0  (x10)", "a1  (x11)", "a2  (x12)", "a3  (x13)", "a4  (x14)", "a5  (x15)",
@@ -574,79 +578,140 @@ void ISS::exec_step() {
 			}
 		} break;
 
-#if 0
 		case Opcode::MUL: {
-            REQUIRE_ISA(M_ISA_EXT);
-			int64_t ans = (int64_t)regs[instr.rs1()] * (int64_t)regs[instr.rs2()];
-			regs[instr.rd()] = ans & 0xFFFFFFFF;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1]->sext(64);
+			auto rs2 = regs[RS2]->sext(64);
+			auto ans = rs1->mul(rs2);
+			ans = ans->extract(0,32);
+
+			regs.write(RD, ans);
 		} break;
 
 		case Opcode::MULH: {
-            REQUIRE_ISA(M_ISA_EXT);
-			int64_t ans = (int64_t)regs[instr.rs1()] * (int64_t)regs[instr.rs2()];
-			regs[instr.rd()] = (ans & 0xFFFFFFFF00000000) >> 32;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1]->sext(64);
+			auto rs2 = regs[RS2]->sext(64);
+			auto ans = rs1->mul(rs2);
+			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
+			ans = ans->lshr(shift);
+			ans = ans->extract(0,32);
+			
+			regs.write(RD, ans);
 		} break;
 
 		case Opcode::MULHU: {
-            REQUIRE_ISA(M_ISA_EXT);
-			int64_t ans = ((uint64_t)(uint32_t)regs[instr.rs1()]) * (uint64_t)((uint32_t)regs[instr.rs2()]);
-			regs[instr.rd()] = (ans & 0xFFFFFFFF00000000) >> 32;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1]->zext(64);
+			auto rs2 = regs[RS2]->zext(64);
+			auto ans = rs1->mul(rs2);
+			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
+			ans = ans->lshr(shift);
+			ans = ans->extract(0,32);
+
+			regs.write(RD, ans);
 		} break;
 
 		case Opcode::MULHSU: {
-            REQUIRE_ISA(M_ISA_EXT);
-			int64_t ans = (int64_t)regs[instr.rs1()] * (uint64_t)((uint32_t)regs[instr.rs2()]);
-			regs[instr.rd()] = (ans & 0xFFFFFFFF00000000) >> 32;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1]->sext(64);
+			auto rs2 = regs[RS2]->zext(64);
+			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
+			auto ans = rs1->mul(rs2);
+			ans = ans->lshr(shift);
+			ans = ans->extract(0,32);
+
+			regs.write(RD, ans);
 		} break;
 
 		case Opcode::DIV: {
-            REQUIRE_ISA(M_ISA_EXT);
-			auto a = regs[instr.rs1()];
-			auto b = regs[instr.rs2()];
-			if (b == 0) {
-				regs[instr.rd()] = -1;
-			} else if (a == REG_MIN && b == -1) {
-				regs[instr.rd()] = a;
-			} else {
-				regs[instr.rd()] = a / b;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1];
+			auto rs2 = regs[RS2];
+
+			auto expr_zero = rs2->eq(REG_ZERO);
+			auto expr_min = regs[RS1]->eq(REG_INT32_MIN);
+			auto expr_rs2_m = regs[RS2]->eq(REG_UINT32_MAX);
+			auto expr_min_rs2_m = expr_min->band(expr_rs2_m);
+
+			// select can not be used with expressions that may cause div-by-zero
+			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+
+			if (cond_is_rs2_zero) {
+				regs.write(RD, REG_UINT32_MAX);
+			} else{
+				auto ans = expr_min_rs2_m->select(rs1,rs1->sdiv(rs2));
+				regs.write(RD, ans);
 			}
+
+			track_and_trace_branch(cond_is_rs2_zero, expr_zero);
 		} break;
 
 		case Opcode::DIVU: {
-            REQUIRE_ISA(M_ISA_EXT);
-			auto a = regs[instr.rs1()];
-			auto b = regs[instr.rs2()];
-			if (b == 0) {
-				regs[instr.rd()] = -1;
-			} else {
-				regs[instr.rd()] = (uint32_t)a / (uint32_t)b;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1];
+			auto rs2 = regs[RS2];
+
+			auto expr_zero = rs2->eq(REG_ZERO);
+			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+
+			if (cond_is_rs2_zero) {
+				regs.write(RD, REG_UINT32_MAX);
+			} else{
+				regs.write(RD, rs1->udiv(rs2));
 			}
+
+			track_and_trace_branch(cond_is_rs2_zero, expr_zero);
 		} break;
 
 		case Opcode::REM: {
-            REQUIRE_ISA(M_ISA_EXT);
-			auto a = regs[instr.rs1()];
-			auto b = regs[instr.rs2()];
-			if (b == 0) {
-				regs[instr.rd()] = a;
-			} else if (a == REG_MIN && b == -1) {
-				regs[instr.rd()] = 0;
-			} else {
-				regs[instr.rd()] = a % b;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1];
+			auto rs2 = regs[RS2];
+
+			auto expr_zero = rs2->eq(REG_ZERO);
+			auto expr_min = rs1->eq(REG_INT32_MIN);
+			auto expr_rs2_m = rs2->eq(REG_UINT32_MAX);
+			auto expr_min_rs2_m = expr_min->band(expr_rs2_m);
+
+			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+
+			if (cond_is_rs2_zero) {
+				regs.write(RD, rs1);
+			} else{
+				auto ans = expr_min_rs2_m->select(REG_ZERO,rs1->srem(rs2));
+				regs.write(RD, ans);
 			}
+
+			track_and_trace_branch(cond_is_rs2_zero, expr_zero);
 		} break;
 
 		case Opcode::REMU: {
-            REQUIRE_ISA(M_ISA_EXT);
-			auto a = regs[instr.rs1()];
-			auto b = regs[instr.rs2()];
-			if (b == 0) {
-				regs[instr.rd()] = a;
-			} else {
-				regs[instr.rd()] = (uint32_t)a % (uint32_t)b;
+			REQUIRE_ISA(M_ISA_EXT);
+
+			auto rs1 = regs[RS1];
+			auto rs2 = regs[RS2];
+
+			auto expr_zero = rs2->eq(REG_ZERO);
+			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+
+			if (cond_is_rs2_zero) {
+				regs.write(RD, rs1);
+			} else{
+				regs.write(RD, rs1->urem(rs2));
 			}
+
+			track_and_trace_branch(cond_is_rs2_zero, expr_zero);
 		} break;
 
+#if 0
 		case Opcode::LR_W: {
             REQUIRE_ISA(A_ISA_EXT);
 			uint32_t addr = regs[instr.rs1()];
