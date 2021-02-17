@@ -1,11 +1,11 @@
 file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
-add_library(rv32-symex
+add_library(rv32
 		iss.cpp
 		syscall.cpp
         ${HEADERS})
 
-target_link_libraries(rv32-symex symex core-common ${SoftFloat_LIBRARIES})
+target_link_libraries(rv32 symex core-common ${SoftFloat_LIBRARIES})
 
 if(COLOR_THEME STREQUAL "LIGHT")
 	message("> using color theme LIGHT")
@@ -15,4 +15,4 @@ elseif(COLOR_THEME STREQUAL "DARK")
 	target_compile_definitions(rv32 PRIVATE COLOR_THEME_DARK)
 endif()
 
-target_include_directories(rv32-symex PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rv32 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
