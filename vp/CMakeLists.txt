@@ -32,24 +32,3 @@ find_package( SoftFloat REQUIRED )
 include_directories( ${SoftFloat_INCLUDE_DIRS} )
 
 subdirs(src)
-
-enable_testing()
-list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
-
-add_test(NAME libgdb
-	COMMAND ./test.sh
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/libgdb")
-add_test(NAME gdb
-	COMMAND ./test.sh
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/gdb")
-add_test(NAME integration
-	COMMAND ./test.sh
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/integration")
-add_test(NAME sw
-	COMMAND ./test.sh
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../sw")
-
-set_tests_properties(gdb integration sw PROPERTIES ENVIRONMENT
-	PATH=$ENV{PATH}:${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set_tests_properties(libgdb PROPERTIES ENVIRONMENT
-	RISCV_VP_BASE=${CMAKE_CURRENT_SOURCE_DIR}/..)
