@@ -108,7 +108,7 @@ int sc_main(int argc, char **argv) {
 	GDBServerRunner *grunner = nullptr;
 	DirectCoreRunner *drunner = nullptr;
 
-	if (opt.use_debug_runner || getenv("SYMEX_DEBUG")) {
+	if (opt.use_debug_runner) {
 		gserver = new GDBServer("GDBServer", threads, &dbg_if, opt.debug_port);
 		grunner = new GDBServerRunner("GDBRunner", gserver, &core);
 	} else {
