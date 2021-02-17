@@ -3,7 +3,7 @@
 
 #include "aon.h"
 #include "can.h"
-#include "core/common/clint.h"
+#include "core/common/real_clint.h"
 #include "syscall.h"
 #include "elf_loader.h"
 #include "fe310_plic.h"
@@ -116,7 +116,7 @@ int sc_main(int argc, char **argv) {
 	std::vector<clint_interrupt_target*> clint_targets {&core};
 
 	FE310_PLIC<1, 53, 64, 7> plic("PLIC");
-	CLINT<1> clint("CLINT");
+	RealCLINT clint("CLINT", clint_targets);
 	AON aon("AON");
 	PRCI prci("PRCI");
 	GPIO gpio0("GPIO0", INT_GPIO_BASE);
