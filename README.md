@@ -1,109 +1,118 @@
-# RISC-V based Virtual Prototype (VP)
+# symex-vp
 
-### Key features of our VP:
+A virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
 
- - RV32GC and RV64GC core support (i.e. RV32IMAFDC and RV64IMAFDC)
- - Implemented in SystemC TLM-2.0
- - SW debug capabilities (GDB RSP interface) with Eclipse
- - FreeRTOS support
- - Generic and configurable bus
- - CLINT and PLIC-based interrupt controller + additional peripherals
- - Instruction-based timing model + annotated TLM 2.0 transaction delays
- - Peripherals, e.g. display, flash controller, preliminary ethernet
- - Example configuration for the SiFive HiFive1 board available
- - Zephyr operating system support
- - Support for simulation of multi-core platforms
- - Machine-, Supervisor- and User-mode (including user traps) privilege levels and CSRs
- - Virtual memory support (Sv32, Sv39, Sv48)
+## Installation
 
-For related information, e.g. verification, please visit http://www.systemc-verification.org/ or contact <riscv@systemc-verification.org>. 
-We accept pull requests and in general contributions are very welcome. 
+This software has the following dependencies:
 
-In the following we provide build instructions and how to compile and run software on the VP.
+* A C++ compiler toolchain with C++17 support
+* [CMake][cmake website]
+* A recent version of [Z3][z3 repo] (`4.8.X` is known to work)
+* [LLVM][llvm website] version `10`
+* [Boost][boost website]
 
+After all dependencies have been installed run:
 
-#### 1) Build the RISC-V GNU Toolchain:
+	$ make
 
-(Cross-)Compiling the software examples, in order to run them on the VP, requires the RISC-V GNU toolchain to be available in PATH. Several standard packages are required to build the toolchain. On Ubuntu the required packages can be installed as follows:
+Executable binaries are then available in `./vp/build/bin`.
 
-```bash
-sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev libboost-iostreams-dev
-```
+## Dockerfile
 
-On Fedora, following actions are required:
-```bash
-sudo dnf install autoconf automake curl libmpc-devel mpfr-devel gmp-devel gawk bison flex texinfo gperf libtool patchutils bc zlib-devel expat-devel cmake boost-devel
-sudo dnf groupinstall "C Development Tools and Libraries"
-#optional debuginfo
-sudo dnf debuginfo-install boost-iostreams boost-program-options boost-regex bzip2-libs glibc libgcc libicu libstdc++ zlib
-```
+To ease installation a `Dockerfile` is provided. To build a docker
+image from this provided `Dockerfile` use the following command:
 
-For more information on prerequisites for the RISC-V GNU toolchain visit https://github.com/riscv/riscv-gnu-toolchain. With the packages installed, the toolchain can be build as follows:
+	$ docker build -t riscv-symex .
 
-```bash
-git clone https://github.com/riscv/riscv-gnu-toolchain.git
-cd riscv-gnu-toolchain
-git submodule update --init --recursive
+Afterwards, run the docker image using:
 
-./configure --prefix=$(pwd)/../riscv-gnu-toolchain-dist-rv32imac-ilp32 --with-arch=rv32imac --with-abi=ilp32
+	$ docker run --rm -it riscv-symex
 
-make
-```
+Executable binaries are available in `/home/riscv-vp/riscv-vp/vp/build/bin`.
 
-For additional configurations and options for the RISC-V GNU toolchain visit https://github.com/riscv/riscv-gnu-toolchain.
+## Usage
 
+Consider the following assembly example program:
 
-#### 2) Build this RISC-V Virtual Prototype:
+	.globl _start
+	_start:
 
-i) Checkout required git submodules:
+	/* Make word (4 bytes) at addr 0x0 symbolic */
+	li a7, 96 /* SYS_sym_mem */
+	li a0, 0  /* address 0x0 */
+	li a1, 4  /* 4 bytes */
+	ecall     /* execute make_symbolic ecall */
 
-```bash
-git submodule update --init vp/src/core/common/gdb-mc/libgdb/mpc
-```
+	/* Load symbolic memory word into register a1 */
+	lw   a1, 0(t0)
 
-ii) in *vp/dependencies* folder (will download and compile SystemC, and build a local version of the softfloat library):
+	li a2, 23
+	blt  a2, a1, true
+	addi a3, a3, 1
+	true:
+	addi a3, a3, 2
 
-```bash
-./build_systemc_233.sh
-./build_softfloat.sh
-```
+	li a7, 93 /* SYS_exit */
+	ecall     /* Signal end of execution */
 
+This example program contains a single branch instruction (`BLT`). The
+program can be compiled using:
 
-iii) in *vp* folder (requires the *boost* C++ library):
- 
-```bash
-mkdir build
-cd build
-cmake ..
-make install
-```
+	$ riscv32-unknown-elf-gcc -o main main.S -march=rv32i -mabi=ilp32 -nostartfiles
 
-The *install* argument is optional, it will copy all VP executables to the local *vp/build/bin* folder.
+Afterwards, execute it using:
 
-#### 3) Compile and run some Software:
+	$ symex-vp --intercept-syscalls main
 
-In *sw*:
+The `symex-vp` will discover two paths through this program. One where
+`BLT` jumps to `true` and one where it doesn't. The value of the `a3`
+register will differ in these two executions.
 
-```bash
-cd simple-sensor    # can be replaced with different example
-make                # (requires RISC-V GNU toolchain in PATH)
-make sim            # (requires *riscv-vp*, i.e. *vp/build/bin/riscv-vp*, executable in PATH)
-```
+## Provided VPs
 
-Please note, if *make* is called without the *install* argument in step 2, then the *riscv-vp* executable is available in *vp/build/src/platform/basic/riscv-vp*.
+The following virtual prototypes are available:
 
+* `symex-vp`: A very minimal virtual prototype, based on `tiny32-vp`
+  from the original riscv-vp repository. This allows testing very basic
+  bare-metal RV32 software.
+* `hifive-vp`: A virtual prototype mostly compatible with the
+  [SiFive HiFive1][sifive hifive1]. This allows executing software
+  for embedded operating systems like [RIOT][riot website] or
+  [zephyr][zephyr website] symbolically.
+* `test32-vp`: This virtual prototype is intended to be used with
+  the [riscv-compliance][riscv-compliance github] repository. This is
+  primarily useful for development (e.g. during testing of new
+  RISC-V extensions).
 
-#### 4) Optional Makefile:
+## Design
 
-The toplevel Makefile can alternatively be used to build the VP including its dependencies (i.e. step 2 in this README), from the toplevel folder call:
+This software allows symbolic execution of software compiled for RV32.
+Registers or memory values can be marked symbolic explicitly using an
+intercepted `ECALL` instruction. Branches based on symbolic values are
+tracked and as soon as execution terminates a new assignment for
+symbolic variables is determined which discovers new paths for the
+program by negating encountered branches. For each new assignment, a new
+SystemC simulation is restarted from the beginning. After all
+encountered branches have been negated, the virtual prototype
+terminates.
 
-```bash
-make
-```
+Errors are signaled by the executed software through a custom `ECALL`.
+This `ECALL` can, for instance, be used in `panic` handlers et cetera.
+For each path causing an invocation of this `ECALL` a test file with
+concrete input values is created. This test file can be replayed by
+pointing the `SYMEX_TESTCASE` environment variable to the corresponding
+test case file. It is also possible to terminate execution upon
+encountering the first error using the `SYMEX_ERREXIT` environment
+variable.
 
-This will also copy the VP binaries into the *vp/build/bin* folder.
-
-
-#### Acknowledgements:
-
-This work was supported in part by the German Federal Ministry of Education and Research (BMBF) within the project CONFIRM under contract no. 16ES0565 and within the project SATiSFy under contract no. 16KIS0821K and within the project VerSys under contract no. 01IW19001, and by the University of Bremen’s graduate school SyDe, funded by the German Excellence Initiative.
+[riscv-vp github]: https://github.com/agra-uni-bremen/riscv-vp
+[wikipedia symex]: https://en.wikipedia.org/wiki/Symbolic_execution
+[z3 repo]: https://github.com/Z3Prover/z3
+[llvm website]: https://llvm.org/
+[cmake website]: https://cmake.org/
+[boost website]: https://www.boost.org/
+[sifive hifive1]: https://www.sifive.com/boards/hifive1
+[riot website]: https://riot-os.org/
+[zephyr website]: https://riot-os.org/
+[riscv-compliance github]: https://github.com/riscv/riscv-compliance/
