@@ -15,10 +15,11 @@
 class SymbolicMemory : public sc_core::sc_module, public load_if {
 private:
 	clover::Solver &solver;
-	clover::ConcolicMemory memory;
 	size_t size;
 
 public:
+	clover::ConcolicMemory memory;
+
 	typedef std::shared_ptr<clover::ConcolicValue> Data;
 	tlm_utils::simple_target_socket<SymbolicMemory> tsock;
 
