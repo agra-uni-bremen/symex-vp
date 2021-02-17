@@ -6,15 +6,17 @@
 #include "debug_memory.h"
 #include "iss.h"
 #include "mem.h"
-#include "memory.h"
+#include "bus.h"
+#include "symbolic_memory.h"
+#include "symbolic_context.h"
+#include "symbolic_explore.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 
 #include "gdb-mc/gdb_server.h"
 #include "gdb-mc/gdb_runner.h"
 
-#include "htif.h"
-
+#include <clover/clover.h>
 #include <boost/io/ios_state.hpp>
 #include <boost/program_options.hpp>
 #include <iomanip>
@@ -34,7 +36,7 @@ public:
 
     addr_t mem_size = 1024 * 1024 * 32;  // 32 MB ram, to place it before the CLINT and run the base examples (assume
     // memory start at zero) without modifications
-    addr_t mem_start_addr = 0x00000000;
+    addr_t mem_start_addr = 0x80000000;
     addr_t mem_end_addr = mem_start_addr + mem_size - 1;
     addr_t clint_start_addr = 0x02000000;
     addr_t clint_end_addr = 0x0200ffff;
@@ -61,7 +63,7 @@ public:
 	}
 };
 
-void dump_test_signature(TestOptions &opt, uint8_t *mem, ELFLoader &loader) {
+void dump_test_signature(TestOptions &opt, clover::ConcolicMemory &mem, ELFLoader &loader) {
     auto begin_sig = loader.get_begin_signature_address();
     auto end_sig = loader.get_end_signature_address();
 
@@ -80,13 +82,14 @@ void dump_test_signature(TestOptions &opt, uint8_t *mem, ELFLoader &loader) {
     auto end = end_sig - opt.mem_start_addr;
 
     std::ofstream sigfile(opt.test_signature, std::ios::out);
+    clover::Solver &solver = symbolic_context.solver;
 
     auto n = begin;
     assert (n % 4 == 0);
     while (n < end) {
-        uint32_t *p = ((uint32_t*)&mem[n]);
-        assert ((uintptr_t)p % 4 == 0);
-        sigfile << std::hex << std::setw(8) << std::setfill('0') << *p << std::endl;
+        auto word = mem.load(n, 4);
+        auto p = solver.evalValue<uint32_t>(word->concrete);
+        sigfile << std::hex << std::setw(8) << std::setfill('0') << p << std::endl;
         n += 4;
     }
 }
@@ -99,33 +102,29 @@ int sc_main(int argc, char **argv) {
 
     tlm::tlm_global_quantum::instance().set(sc_core::sc_time(opt.tlm_global_quantum, sc_core::SC_NS));
 
-    ISS core(0, opt.use_E_base_isa);
+    ISS core(symbolic_context, opt.use_E_base_isa);
     MMU mmu(core);
     CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
-    SimpleMemory mem("SimpleMemory", opt.mem_size);
+    SymbolicMemory mem("mem", symbolic_context.solver, opt.mem_size);
     ELFLoader loader(opt.input_program.c_str());
     SimpleBus<2, 3> bus("SimpleBus");
     SyscallHandler sys("SyscallHandler");
     CLINT<1> clint("CLINT");
     DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
-    MemoryDMI dmi = MemoryDMI::create_start_size_mapping(mem.data, opt.mem_start_addr, mem.size);
-    InstrMemoryProxy instr_mem(dmi, core);
-
     std::shared_ptr<BusLock> bus_lock = std::make_shared<BusLock>();
     core_mem_if.bus_lock = bus_lock;
 
     instr_memory_if *instr_mem_if = &core_mem_if;
     data_memory_if *data_mem_if = &core_mem_if;
-    if (opt.use_instr_dmi)
-        instr_mem_if = &instr_mem;
-    if (opt.use_data_dmi) {
-        core_mem_if.dmi_ranges.emplace_back(dmi);
+    if (opt.use_instr_dmi || opt.use_data_dmi) {
+            std::cerr << "DMI not supported by symbolic execution backend" << std::endl;
+            return 1;
     }
 
-    loader.load_executable_image(mem, mem.size, opt.mem_start_addr);
+    loader.load_executable_image(mem, opt.mem_size, opt.mem_start_addr);
     core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.mem_end_addr));
-    sys.init(mem.data, opt.mem_start_addr, loader.get_heap_addr());
+    sys.init(nullptr, 0, loader.get_heap_addr());
     sys.register_core(&core);
 
     if (opt.intercept_syscalls)
@@ -160,25 +159,6 @@ int sc_main(int argc, char **argv) {
     }
 
     {
-        auto addr = loader.get_to_host_address();
-        uint8_t *p = &(mem.data[addr - opt.mem_start_addr]);
-        assert (((uintptr_t)p) % 8 == 0);  // correct alignment for uint64_t
-        auto to_host_callback = [&core](uint64_t x) {
-            if (x == 1) {
-                //NOTE: the "scall" benchmark (RISC-V compliance) still requires HTIF support for successful completion ...
-                core.sys_exit();
-            } else {
-                if (x != 0) {
-                    std::cout << "to-host: " << std::to_string(x) << std::endl;
-                    core.sys_exit();
-                }
-                //throw std::runtime_error("to-host: " + std::to_string(x));
-            }
-        };
-        new HTIF("HTIF", (uint64_t*)p, &core.total_num_instr, opt.max_test_instrs, to_host_callback);
-    }
-
-    {
         std::transform(opt.isa.begin(), opt.isa.end(), opt.isa.begin(), ::toupper);
         core.csrs.misa.extensions = core.csrs.misa.I;
         if (opt.isa.find('G') != std::string::npos)
@@ -206,7 +186,7 @@ int sc_main(int argc, char **argv) {
     core.show();
 
     if (!opt.test_signature.empty()) {
-        dump_test_signature(opt, mem.data, loader);
+        dump_test_signature(opt, mem.memory, loader);
     }
 
     return 0;
