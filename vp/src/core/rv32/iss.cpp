@@ -1215,10 +1215,11 @@ void ISS::exec_step() {
         case Opcode::FCVT_D_LU:
         case Opcode::FMV_D_X:
             RAISE_ILLEGAL_INSTRUCTION();
+            break;
 
 #endif
-		default:
-			throw std::runtime_error("unknown opcode");
+        default:
+            throw std::runtime_error("unknown opcode");
 	}
 }
 

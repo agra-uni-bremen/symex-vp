@@ -18,7 +18,17 @@ After all dependencies have been installed run:
 
 Executable binaries are then available in `./vp/build/bin`.
 
+<<<<<<< HEAD
 ## Dockerfile
+=======
+```bash
+sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev libboost-iostreams-dev
+```
+On Ubuntu 20, install these:
+```bash
+sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo libgoogle-perftools-dev libtool patchutils bc zlib1g-dev libexpat-dev libboost-iostreams-dev libboost-program-options-dev libboost-log-dev
+```
+>>>>>>> origin/master
 
 To ease installation a `Dockerfile` is provided. To build a docker
 image from this provided `Dockerfile` use the following command:

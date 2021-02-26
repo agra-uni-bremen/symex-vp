@@ -33,6 +33,8 @@ std::map<std::string, GDBServer::packet_handler> handlers {
 };
 
 void GDBServer::haltReason(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	// If n is a recognized stop reason […]. The aa should be
 	// ‘05’, the trap signal. At most one stop reason should be
 	// present.
@@ -42,6 +44,8 @@ void GDBServer::haltReason(int conn, gdb_command_t *cmd) {
 }
 
 void GDBServer::getRegisters(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	auto formatter = new RegisterFormater(arch);
 	auto fn = [formatter] (debug_target_if *hart) {
 		for (uint64_t v : hart->get_registers())
@@ -63,6 +67,9 @@ void GDBServer::setThread(int conn, gdb_command_t *cmd) {
 }
 
 void GDBServer::killServer(int conn, gdb_command_t *cmd) {
+	(void)conn;
+	(void)cmd;
+
 	// TODO: Stop the System C simulation instead of
 	// terminating the program. This would require interacting
 	// with the GDBServerRunner directly to make it exit.
@@ -154,6 +161,8 @@ ret:
 }
 
 void GDBServer::threadInfo(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	std::string thrlist = "m";
 
 	/* TODO: refactor this to make it always output hex digits,
@@ -172,6 +181,8 @@ void GDBServer::threadInfo(int conn, gdb_command_t *cmd) {
 }
 
 void GDBServer::threadInfoEnd(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	// GDB will respond to each reply with a request for more thread
 	// ids (using the ‘qs’ form of the query), until the target
 	// responds with ‘l’ (lower-case ell, for last).
@@ -182,11 +193,15 @@ void GDBServer::threadInfoEnd(int conn, gdb_command_t *cmd) {
 }
 
 void GDBServer::qAttached(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	// 0 process started, 1 attached to process
 	send_packet(conn, "0");
 }
 
 void GDBServer::qSupported(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	send_packet(conn, ("vContSupported+;PacketSize=" + std::to_string(GDB_PKTSIZ)).c_str());
 }
 
@@ -208,6 +223,7 @@ void GDBServer::vCont(int conn, gdb_command_t *cmd) {
 	gdb_vcont_t *vcont;
 	int stopped_thread = -1;
 	const char *stop_reason = NULL;
+	std::map<debug_target_if *, bool> matched;
 
 	/* This handler attempts to implement the all-stop mode.
 	 * See: https://sourceware.org/gdb/onlinedocs/gdb/All_002dStop-Mode.html */
@@ -217,12 +233,21 @@ void GDBServer::vCont(int conn, gdb_command_t *cmd) {
 		bool single = false;
 		if (vcont->action == 's')
 			single = true;
-		else if (vcont->action == 'S')
+		else if (vcont->action != 'c')
 			throw std::invalid_argument("Unimplemented vCont action"); /* TODO */
 
 		std::vector<debug_target_if *> selected_harts;
 		try {
-			selected_harts = run_threads(vcont->thread.tid, single);
+			auto run = get_threads(vcont->thread.tid);
+			for (auto i = run.begin(); i != run.end();) {
+				debug_target_if *hart = *i;
+				if (matched.count(hart))
+					i = run.erase(i); /* already matched */
+				else
+					i++;
+			}
+
+			selected_harts = run_threads(run, single);
 		} catch (const std::out_of_range&) {
 			send_packet(conn, "E01");
 			return;
@@ -246,6 +271,16 @@ void GDBServer::vCont(int conn, gdb_command_t *cmd) {
 				continue;
 			}
 		}
+
+		/* The vCont specification mandates that only the leftmost action with
+		 * a matching thread-id is applied. Unfortunately, the specification
+		 * is a bit unclear in regards to handling two actions with no thread
+		 * id (i.e. GDB_THREAD_ALL). */
+		if (vcont->thread.tid > 0) {
+			auto threads = get_threads(vcont->thread.tid);
+			assert(threads.size() == 1);
+			matched[threads.front()] = true;
+		}
 	}
 
 	assert(stop_reason && stopped_thread >= 1);
@@ -265,6 +300,8 @@ void GDBServer::vCont(int conn, gdb_command_t *cmd) {
 }
 
 void GDBServer::vContSupported(int conn, gdb_command_t *cmd) {
+	(void)cmd;
+
 	// We need to support both c and C otherwise GDB doesn't use vCont
 	// This is documented in the remote_vcont_probe function in the GDB source.
 	send_packet(conn, "vCont;c;C");
