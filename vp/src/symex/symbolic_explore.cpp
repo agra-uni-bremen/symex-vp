@@ -151,6 +151,9 @@ symbolic_explore(int argc, char **argv)
 	// Hide SystemC copyright message
 	setenv("SYSTEMC_DISABLE_COPYRIGHT_MESSAGE", "1", 0);
 
+	// Mempool does not seem to free all memory, disable it.
+	setenv("SYSTEMC_MEMPOOL_DONT_USE", "1", 0);
+
 	// Use current time as seed for random generator
 	std::srand(std::time(nullptr));
 
