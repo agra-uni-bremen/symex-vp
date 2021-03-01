@@ -128,8 +128,10 @@ explore_paths(int argc, char **argv)
 
 		// Reset SystemC simulation context
 		// See also: https://github.com/accellera-official/systemc/issues/8
-		if (sc_core::sc_curr_simcontext)
+		if (sc_core::sc_curr_simcontext) {
+			sc_core::sc_report_handler::release();
 			delete sc_core::sc_curr_simcontext;
+		}
 		sc_core::sc_curr_simcontext = NULL;
 
 		int ret;
@@ -137,7 +139,9 @@ explore_paths(int argc, char **argv)
 			return ret;
 	} while (ctx.setupNewValues(tracer));
 
+	sc_core::sc_report_handler::release();
 	delete sc_core::sc_curr_simcontext;
+
 	return paths_found;
 }
 
