@@ -91,14 +91,14 @@ This software allows symbolic execution of software compiled for RV32.
 Registers or memory values can be marked symbolic explicitly using an
 intercepted `ECALL` instruction. Branches based on symbolic values are
 tracked and as soon as execution terminates a new assignment for
-symbolic variables is determined which discovers new paths for the
-program by negating encountered branches. For each new assignment, a new
+symbolic variables are determined which discovers new paths for the
+program by negating encountered branches. For each new assignment, the
 SystemC simulation is restarted from the beginning. After all
 encountered branches have been negated, the virtual prototype
 terminates.
 
 Errors are signaled by the executed software through a custom `ECALL`.
-This `ECALL` can, for instance, be used in `panic` handlers et cetera.
+This `ECALL` can, for instance, be used in software `panic` handlers.
 For each path causing an invocation of this `ECALL` a test file with
 concrete input values is created. This test file can be replayed by
 pointing the `SYMEX_TESTCASE` environment variable to the corresponding
