@@ -9,7 +9,7 @@ This software has the following dependencies:
 * A C++ compiler toolchain with C++17 support
 * [CMake][cmake website]
 * A recent version of [Z3][z3 repo] (`4.8.X` is known to work)
-* [LLVM][llvm website] version `10`
+* [LLVM][llvm website]
 * [Boost][boost website]
 
 After all dependencies have been installed run:
