@@ -85,6 +85,18 @@ The following virtual prototypes are available:
   primarily useful for development (e.g. during testing of new
   RISC-V extensions).
 
+## Environment Variables
+
+The following environment variables can be set:
+
+* **SYMEX_ERREXIT:** If set, terminate after encountering the first
+  error (see below) during symbolic execution of the software.
+* **SYMEX_TIMEOUT:** This can be used to configure the solver timeout
+  of the employed SMT solver, by default no timeout is used.
+* **SYMEX_TESTCASE:** This environment variable can point to a test case
+  file for replaying inputs causing an error. This is most useful in
+  conjunction with `--debug-mode`.
+
 ## Design
 
 This software allows symbolic execution of software compiled for RV32.
