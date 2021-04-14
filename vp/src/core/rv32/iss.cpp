@@ -595,9 +595,7 @@ void ISS::exec_step() {
 			auto rs1 = regs[RS1]->sext(64);
 			auto rs2 = regs[RS2]->sext(64);
 			auto ans = rs1->mul(rs2);
-			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
-			ans = ans->lshr(shift);
-			ans = ans->extract(0,32);
+			ans = ans->extract(32,32);
 			
 			regs.write(RD, ans);
 		} break;
@@ -608,9 +606,7 @@ void ISS::exec_step() {
 			auto rs1 = regs[RS1]->zext(64);
 			auto rs2 = regs[RS2]->zext(64);
 			auto ans = rs1->mul(rs2);
-			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
-			ans = ans->lshr(shift);
-			ans = ans->extract(0,32);
+			ans = ans->extract(32,32);
 
 			regs.write(RD, ans);
 		} break;
@@ -620,10 +616,8 @@ void ISS::exec_step() {
 
 			auto rs1 = regs[RS1]->sext(64);
 			auto rs2 = regs[RS2]->zext(64);
-			auto shift = solver.BVC(std::nullopt, (uint32_t)32);
 			auto ans = rs1->mul(rs2);
-			ans = ans->lshr(shift);
-			ans = ans->extract(0,32);
+			ans = ans->extract(32,32);
 
 			regs.write(RD, ans);
 		} break;
