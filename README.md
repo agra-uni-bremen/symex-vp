@@ -1,6 +1,6 @@
 # symex-vp
 
-A virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
+A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
 
 ## Installation
 
