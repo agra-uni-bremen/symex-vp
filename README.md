@@ -118,6 +118,25 @@ test case file. It is also possible to terminate execution upon
 encountering the first error using the `SYMEX_ERREXIT` environment
 variable.
 
+## How To Cite
+
+The concepts behind `symex-vp` are further described in the following
+publication which is about to be published as part of the
+[DATE 2021][date conference] proceedings:
+
+	@inproceedings{tempel2021systemc,
+		author    = {Tempel, Sören and Herdt, Vladimir and Drechsler, Rolf},
+		title     = {{An Effective Methodology for Integrating Concolic Testing with SystemC-based Virtual Prototypes}},
+		booktitle = {Design, Automation and Test in Europe Conference (DATE). Design, Automation \& Test in Europe (DATE-2021)},
+		year      = {2021},
+		month     = feb,
+		location  = {Grenoble, France}
+	}
+
+Sense the proceedings have not been published yet, you can find a
+[PDF](https://www.informatik.uni-bremen.de/agra/doc/konf/DATE-2021_Concolic_Testing_with_SystemC_based_VPs.pdf)
+on our website in the meantime.
+
 ## Acknowledgements
 
 This work was supported in part by the German Federal Ministry of
@@ -135,3 +154,4 @@ no.~01IW19001.
 [riot website]: https://riot-os.org/
 [zephyr website]: https://riot-os.org/
 [riscv-compliance github]: https://github.com/riscv/riscv-compliance/
+[date conference]: https://www.date-conference.com/
