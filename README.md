@@ -2,6 +2,17 @@
 
 A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
 
+## Cloning
+
+This repository is a mirror of a private GitLab repository. Used
+submodules point to other private repositories which are also mirrored
+on GitHub. In order to rewrite the submodule URLs properly, clone the
+repository as follows:
+
+	$ git clone https://github.com/agra-uni-bremen/symex-vp
+	$ git config url."https://github.com/agra-uni-bremen/".insteadOf "git@gitlab.informatik.uni-bremen.de:riscv/"
+	$ git submodule update --init
+
 ## Installation
 
 This software has the following dependencies:
