@@ -118,6 +118,13 @@ test case file. It is also possible to terminate execution upon
 encountering the first error using the `SYMEX_ERREXIT` environment
 variable.
 
+## Acknowledgements
+
+This work was supported in part by the German Federal Ministry of
+Education and Research (BMBF) within the project Scale4Edge under
+contract no.~16ME0127 and within the project VerSys under contract
+no.~01IW19001.
+
 [riscv-vp github]: https://github.com/agra-uni-bremen/riscv-vp
 [wikipedia symex]: https://en.wikipedia.org/wiki/Symbolic_execution
 [z3 repo]: https://github.com/Z3Prover/z3
