@@ -133,7 +133,7 @@ publication which is about to be published as part of the
 		location  = {Grenoble, France}
 	}
 
-Sense the proceedings have not been published yet, you can find a
+Since the proceedings have not been published yet, you can find a
 [PDF](https://www.informatik.uni-bremen.de/agra/doc/konf/DATE-2021_Concolic_Testing_with_SystemC_based_VPs.pdf)
 on our website in the meantime.
 
