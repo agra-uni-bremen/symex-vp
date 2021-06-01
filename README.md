@@ -10,7 +10,7 @@ on GitHub. In order to rewrite the submodule URLs properly, clone the
 repository as follows:
 
 	$ git clone https://github.com/agra-uni-bremen/symex-vp
-	$ git config url."https://github.com/agra-uni-bremen/".insteadOf "git@gitlab.informatik.uni-bremen.de:riscv/"
+	$ git config --global url."https://github.com/agra-uni-bremen/".insteadOf "git@gitlab.informatik.uni-bremen.de:riscv/"
 	$ git submodule update --init
 
 ## Installation
