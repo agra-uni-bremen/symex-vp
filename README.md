@@ -2,6 +2,28 @@
 
 A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
 
+## About
+
+This software allows symbolic execution (or more specifically concolic
+testing) of software compiled for RISC-V RV32. Registers or memory values can
+be marked symbolic explicitly using an intercepted `ECALL` instruction
+or by introducing symbolic values through a provided SystemC TLM-2.0
+extension. Branches based on introduced symbolic values are tracked and
+as soon as execution terminates new assignments for symbolic variables
+are determined, which discover new paths through the program, by negating
+encountered branch conditions (Dynamic Symbolic Execution). For each new
+assignment, the SystemC simulation is restarted from the beginning.
+After all encountered branches have been negated, the virtual prototype
+terminates.
+
+Errors are signaled by the executed software through a custom `ECALL`.
+This `ECALL` can, for instance, be used in software `panic` handlers.
+For each path causing an invocation of this `ECALL` a test file with
+concrete input values is created. This test file can be replayed by
+pointing the `SYMEX_TESTCASE` environment variable to it. It is also
+possible to terminate execution upon encountering the first error using
+the `SYMEX_ERREXIT` environment variable.
+
 ## Cloning
 
 This repository is a mirror of a private GitLab repository. Used
@@ -107,28 +129,6 @@ The following environment variables can be set:
 * **SYMEX_TESTCASE:** This environment variable can point to a test case
   file for replaying inputs causing an error. This is most useful in
   conjunction with `--debug-mode`.
-
-## Design
-
-This software allows symbolic execution (or more specifically concolic
-testing) of software compiled for RV32. Registers or memory values can
-be marked symbolic explicitly using an intercepted `ECALL` instruction
-or by introducing symbolic values through a provided SystemC TLM-2.0
-extension. Branches based on introduced symbolic values are tracked and
-as soon as execution terminates new assignments for symbolic variables
-are determined, which discover new paths through the program, by negating
-encountered branch conditions (Dynamic Symbolic Execution). For each new
-assignment, the SystemC simulation is restarted from the beginning.
-After all encountered branches have been negated, the virtual prototype
-terminates.
-
-Errors are signaled by the executed software through a custom `ECALL`.
-This `ECALL` can, for instance, be used in software `panic` handlers.
-For each path causing an invocation of this `ECALL` a test file with
-concrete input values is created. This test file can be replayed by
-pointing the `SYMEX_TESTCASE` environment variable to it. It is also
-possible to terminate execution upon encountering the first error using
-the `SYMEX_ERREXIT` environment variable.
 
 ## How To Cite
 
