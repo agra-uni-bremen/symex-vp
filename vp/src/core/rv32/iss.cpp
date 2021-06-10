@@ -84,12 +84,12 @@ int regcolors[] = {
 #endif
 };
 
-RegFile::RegFile(clover::Solver &_solver) : solver(_solver) {
+RegFile::RegFile(clover::Solver &_solver, clover::Trace &_trace) : solver(_solver), trace(_trace) {
 	for (size_t i = 0; i < regs.size(); i++)
 		regs[i] = solver.BVC(std::nullopt, (uint32_t)0);
 }
 
-RegFile::RegFile(clover::Solver &_solver, const RegFile &other) : solver(_solver) {
+RegFile::RegFile(clover::Solver &_solver, clover::Trace &_trace, const RegFile &other) : solver(_solver), trace(_trace) {
 	for (size_t i = 0; i < regs.size(); i++)
 		regs[i] = other.regs[i];
 }
@@ -131,17 +131,18 @@ void RegFile::show() {
 	for (size_t i = 0; i < regs.size(); i++) {
 		std::string bvs = "none";
 		if (regs[i]->symbolic.has_value()) {
-			auto v = solver.evalValue<uint32_t>(*regs[i]->symbolic);
+			auto q = trace.getQuery(*regs[i]->symbolic);
+			auto v = solver.evalValue<uint32_t>(q);
 			bvs = std::to_string(v);
 		}
 
-		uint32_t bvv = solver.evalValue<uint32_t>(regs[i]->concrete);
+		uint32_t bvv = solver.getValue<uint32_t>(regs[i]->concrete);
 		printf("%s = (%s, %" PRIx32 ")\n", regnames[i], bvs.c_str(), bvv);
 	}
 }
 
 ISS::ISS(SymbolicContext &c, uint32_t hart_id, bool use_E_base_isa)
-  : solver(c.solver), ctx(c.ctx), tracer(c.trace), regs(solver), systemc_name("Core-" + std::to_string(hart_id)) {
+  : solver(c.solver), ctx(c.ctx), tracer(c.trace), regs(solver, tracer), systemc_name("Core-" + std::to_string(hart_id)) {
 	csrs.mhartid.reg = hart_id;
 	if (use_E_base_isa)
 		csrs.misa.select_E_base_isa();
@@ -331,7 +332,7 @@ void ISS::exec_step() {
 		case Opcode::JALR: {
 			auto link = PC;
 
-			auto rs1 = solver.evalValue<uint32_t>(regs[RS1]->concrete);
+			auto rs1 = solver.getValue<uint32_t>(regs[RS1]->concrete);
 			pc = (rs1 + instr.I_imm()) & ~1;
 
 			trap_check_pc_alignment();
@@ -385,7 +386,7 @@ void ISS::exec_step() {
 
 		case Opcode::BEQ: {
 			auto res = regs[RS1]->eq(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -396,7 +397,7 @@ void ISS::exec_step() {
 
 		case Opcode::BNE: {
 			auto res = regs[RS1]->ne(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -407,7 +408,7 @@ void ISS::exec_step() {
 
 		case Opcode::BLT: {
 			auto res = regs[RS1]->slt(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -418,7 +419,7 @@ void ISS::exec_step() {
 
 		case Opcode::BGE: {
 			auto res = regs[RS1]->sge(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -429,7 +430,7 @@ void ISS::exec_step() {
 
 		case Opcode::BLTU: {
 			auto res = regs[RS1]->ult(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -440,7 +441,7 @@ void ISS::exec_step() {
 
 		case Opcode::BGEU: {
 			auto res = regs[RS1]->uge(regs[RS2]);
-			bool cond = solver.eval(res->concrete);
+			bool cond = eval(res->concrete);
 			if (cond) {
 				pc = last_pc + instr.B_imm();
 				trap_check_pc_alignment();
@@ -489,7 +490,7 @@ void ISS::exec_step() {
 				if (rd != RegFile::zero) {
 					regs.write(RD, solver.BVC(std::nullopt, get_csr_value(addr)));
 				}
-				set_csr_value(addr, solver.evalValue<uint32_t>(rs1_val->concrete));
+				set_csr_value(addr, solver.getValue<uint32_t>(rs1_val->concrete));
 			}
 		} break;
 
@@ -506,7 +507,7 @@ void ISS::exec_step() {
 				if (rd != RegFile::zero)
 					regs.write(RD, solver.BVC(std::nullopt, csr_val));
 				if (write)
-					set_csr_value(addr, csr_val | solver.evalValue<uint32_t>(rs1_val->concrete));
+					set_csr_value(addr, csr_val | solver.getValue<uint32_t>(rs1_val->concrete));
 			}
 		} break;
 
@@ -518,7 +519,7 @@ void ISS::exec_step() {
                 RAISE_ILLEGAL_INSTRUCTION();
 			} else {
 				auto rd = instr.rd();
-				auto rs1_val = solver.evalValue<uint32_t>(regs[rs1]->concrete);
+				auto rs1_val = solver.getValue<uint32_t>(regs[rs1]->concrete);
 				auto csr_val = get_csr_value(addr);
 				if (rd != RegFile::zero)
 					regs.write(rd, solver.BVC(std::nullopt, csr_val));
@@ -1539,7 +1540,7 @@ unsigned ISS::get_syscall_register_index() {
 
 uint64_t ISS::read_register(unsigned idx) {
 	auto reg = regs.read(idx);
-	return solver.evalValue<uint32_t>(reg->concrete);
+	return solver.getValue<uint32_t>(reg->concrete);
 }
 
 void ISS::write_register(unsigned idx, uint64_t value) {
@@ -1584,7 +1585,7 @@ std::vector<uint64_t> ISS::get_registers(void) {
     std::vector<uint64_t> regvals;
 
     for (auto v : regs.regs) {
-        auto regval = solver.evalValue<uint32_t>(v->concrete);
+        auto regval = solver.getValue<uint32_t>(v->concrete);
         regvals.push_back(regval);
     }
 
@@ -1911,7 +1912,7 @@ void ISS::performance_and_sync_update(Opcode::Mapping executed_op) {
 }
 
 void ISS::run_step() {
-	assert(solver.evalValue<uint32_t>(regs.read(0)->concrete) == 0);
+	assert(solver.getValue<uint32_t>(regs.read(0)->concrete) == 0);
 
 	// speeds up the execution performance (non debug mode) significantly by
 	// checking the additional flag first

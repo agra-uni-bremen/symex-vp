@@ -73,14 +73,15 @@ namespace rv32 {
 
 struct RegFile {
 	clover::Solver &solver;
+	clover::Trace &trace;
 	static constexpr unsigned NUM_REGS = 32;
 
 	typedef std::shared_ptr<clover::ConcolicValue> RegValue;
 	std::array<RegValue, NUM_REGS> regs;
 
-	RegFile(clover::Solver &_solver);
+	RegFile(clover::Solver &_solver, clover::Trace &_trace);
 
-	RegFile(clover::Solver &_solver, const RegFile &other);
+	RegFile(clover::Solver &_solver, clover::Trace &_trace, const RegFile &other);
 
 	void write(uint32_t index, RegValue value);
 
@@ -259,6 +260,11 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
     std::vector<uint64_t> get_registers(void) override;
 
+    bool eval(std::shared_ptr<clover::BitVector> bv) {
+        auto q = tracer.getQuery(bv);
+        return solver.eval(q);
+    };
+
     void track_and_trace_branch(bool cond, std::shared_ptr<clover::ConcolicValue> expr) {
         if (expr->symbolic.has_value())
             tracer.add(cond, *expr->symbolic);
@@ -332,7 +338,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
 	template <unsigned Alignment, bool isLoad>
 	inline void trap_check_addr_alignment(std::shared_ptr<clover::ConcolicValue> addr) {
-		auto caddr = solver.evalValue<uint32_t>(addr->concrete);
+		auto caddr = solver.getValue<uint32_t>(addr->concrete);
 		if (unlikely(caddr % Alignment)) {
 			raise_trap(isLoad ? EXC_LOAD_ADDR_MISALIGNED : EXC_STORE_AMO_ADDR_MISALIGNED, caddr);
 		}

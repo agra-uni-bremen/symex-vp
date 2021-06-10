@@ -196,7 +196,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		bus_lock->wait_for_access_rights(iss.get_hart_id());
 		// XXX: DMI is currently not supported for symbolic values.
 
-		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto caddr = iss.solver.getValue<uint32_t>(addr->concrete);
 		auto vaddr = v2p(caddr, STORE);
 
 		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
@@ -206,7 +206,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		bus_lock->wait_for_access_rights(iss.get_hart_id());
 		// XXX: DMI is currently not supported for symbolic values.
 
-		auto caddr = iss.solver.evalValue<uint32_t>(addr->concrete);
+		auto caddr = iss.solver.getValue<uint32_t>(addr->concrete);
 		auto vaddr = v2p(caddr, STORE);
 
 		Concolic data;

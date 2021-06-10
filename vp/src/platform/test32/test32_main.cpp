@@ -127,7 +127,7 @@ void dump_test_signature(TestOptions &opt, clover::ConcolicMemory &mem, ELFLoade
     assert (n % 4 == 0);
     while (n < end) {
         auto word = mem.load(n, 4);
-        auto p = solver.evalValue<uint32_t>(word->concrete);
+        auto p = solver.getValue<uint32_t>(word->concrete);
         sigfile << std::hex << std::setw(8) << std::setfill('0') << p << std::endl;
         n += 4;
     }
