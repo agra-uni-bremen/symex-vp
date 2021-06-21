@@ -634,7 +634,7 @@ void ISS::exec_step() {
 			auto expr_min_rs2_m = expr_min->band(expr_rs2_m);
 
 			// select can not be used with expressions that may cause div-by-zero
-			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+			bool cond_is_rs2_zero = eval(expr_zero->concrete);
 
 			if (cond_is_rs2_zero) {
 				regs.write(RD, REG_UINT32_MAX);
@@ -653,7 +653,7 @@ void ISS::exec_step() {
 			auto rs2 = regs[RS2];
 
 			auto expr_zero = rs2->eq(REG_ZERO);
-			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+			bool cond_is_rs2_zero = eval(expr_zero->concrete);
 
 			if (cond_is_rs2_zero) {
 				regs.write(RD, REG_UINT32_MAX);
@@ -675,7 +675,7 @@ void ISS::exec_step() {
 			auto expr_rs2_m = rs2->eq(REG_UINT32_MAX);
 			auto expr_min_rs2_m = expr_min->band(expr_rs2_m);
 
-			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+			bool cond_is_rs2_zero = eval(expr_zero->concrete);
 
 			if (cond_is_rs2_zero) {
 				regs.write(RD, rs1);
@@ -694,7 +694,7 @@ void ISS::exec_step() {
 			auto rs2 = regs[RS2];
 
 			auto expr_zero = rs2->eq(REG_ZERO);
-			bool cond_is_rs2_zero = solver.eval(expr_zero->concrete);
+			bool cond_is_rs2_zero = eval(expr_zero->concrete);
 
 			if (cond_is_rs2_zero) {
 				regs.write(RD, rs1);
