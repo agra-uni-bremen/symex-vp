@@ -133,21 +133,19 @@ The following environment variables can be set:
 ## How To Cite
 
 The concepts behind `symex-vp` are further described in the following
-publication which is about to be published as part of the
+[publication][symex-vp paper] which was published as part of the
 [DATE 2021][date conference] proceedings:
 
 	@inproceedings{tempel2021systemc,
 		author    = {Tempel, Sören and Herdt, Vladimir and Drechsler, Rolf},
-		title     = {{An Effective Methodology for Integrating Concolic Testing with SystemC-based Virtual Prototypes}},
-		booktitle = {Design, Automation and Test in Europe Conference (DATE). Design, Automation \& Test in Europe (DATE-2021)},
+		booktitle = {2021 Design, Automation \& Test in Europe Conference \& Exhibition (DATE)},
+		title     = {An Effective Methodology for Integrating Concolic Testing with SystemC-based Virtual Prototypes},
 		year      = {2021},
+		pages     = {218-221},
 		month     = feb,
 		location  = {Grenoble, France}
+		doi       = {10.23919/DATE51398.2021.9474149}
 	}
-
-Since the proceedings have not been published yet, you can find a
-[PDF](https://www.informatik.uni-bremen.de/agra/doc/konf/DATE-2021_Concolic_Testing_with_SystemC_based_VPs.pdf)
-on our website in the meantime.
 
 ## Acknowledgements
 
@@ -174,3 +172,4 @@ copyright headers of individual files for more information.
 [zephyr website]: https://riot-os.org/
 [riscv-compliance github]: https://github.com/riscv/riscv-compliance/
 [date conference]: https://www.date-conference.com/
+[symex-vp paper]: https://ieeexplore.ieee.org/document/9474149
