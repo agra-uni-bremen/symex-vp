@@ -151,8 +151,8 @@ The concepts behind `symex-vp` are further described in the following
 
 This work was supported in part by the German Federal Ministry of
 Education and Research (BMBF) within the project Scale4Edge under
-contract no.~16ME0127 and within the project VerSys under contract
-no.~01IW19001.
+contract no. 16ME0127 and within the project VerSys under contract
+no. 01IW19001.
 
 ## License
 
