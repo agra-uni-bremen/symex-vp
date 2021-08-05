@@ -127,8 +127,6 @@ public:
 	bool enable_can = false;
 	std::string tun_device = "tun0";
 
-	size_t pktsize = 45;
-
 	HifiveOptions(void) {
         	// clang-format off
 		add_options()
