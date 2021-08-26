@@ -143,7 +143,7 @@ The concepts behind `symex-vp` are further described in the following
 		year      = {2021},
 		pages     = {218-221},
 		month     = feb,
-		location  = {Grenoble, France}
+		location  = {Grenoble, France},
 		doi       = {10.23919/DATE51398.2021.9474149}
 	}
 
