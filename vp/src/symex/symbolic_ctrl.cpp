@@ -57,8 +57,11 @@ SymbolicCTRL::write_ctrl(RegisterRange::WriteInfo t)
 	// All other bits are reserved for future use.
 
 	uint32_t *val = &symbolic_ctrl[0];
-	if (*val & CTRL_ERROR)
+	if (*val & CTRL_ERROR) {
 		SC_REPORT_ERROR("/AGRA/riscv-vp/host-error", "SYS_host_error");
+		symif.sys_exit();
+	}
+
 	if (*val & CTRL_EXIT)
 		symif.sys_exit();
 
