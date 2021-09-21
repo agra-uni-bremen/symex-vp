@@ -49,6 +49,7 @@
 #include "fp.h"
 #include "mem_if.h"
 #include "syscall_if.h"
+#include "symbolic_if.h"
 #include "symbolic_context.h"
 #include "util/common.h"
 
@@ -196,7 +197,7 @@ struct PendingInterrupts {
 	uint32_t pending;
 };
 
-struct ISS : public external_interrupt_target, public clint_interrupt_target, public iss_syscall_if, public debug_target_if {
+struct ISS : public external_interrupt_target, public clint_interrupt_target, public iss_syscall_if, public debug_target_if, public symbolic_iss_if {
 	clover::Solver &solver;
 	clover::ExecutionContext &ctx;
 	clover::Trace &tracer;
