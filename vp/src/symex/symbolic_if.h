@@ -21,6 +21,7 @@
 struct symbolic_iss_if {
 	virtual ~symbolic_iss_if(void) {}
 	virtual void make_symbolic(uint32_t addr, size_t size) = 0;
+	virtual void sys_exit(void) = 0;
 };
 
 #endif

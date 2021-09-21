@@ -18,6 +18,7 @@
 #include "symbolic_ctrl.h"
 
 #define CTRL_ERROR (1 << 31)
+#define CTRL_EXIT  (1 << 30)
 
 SymbolicCTRL::SymbolicCTRL(sc_core::sc_module_name, symbolic_iss_if &_symif)
   : symif(_symif)
@@ -49,11 +50,17 @@ SymbolicCTRL::write_size(RegisterRange::WriteInfo t)
 void
 SymbolicCTRL::write_ctrl(RegisterRange::WriteInfo t)
 {
-	// XXX: Only 31th bit is used currently, all other bits are
-	// reserved for future use and currently entirely ignored.
+	// The 31th bit is used for signal error conditions from the
+	// software to the VP. The 30th bit is used to signal that
+	// the execution for this path is supposed to terminate.
+	//
+	// All other bits are reserved for future use.
+
 	uint32_t *val = &symbolic_ctrl[0];
 	if (*val & CTRL_ERROR)
 		SC_REPORT_ERROR("/AGRA/riscv-vp/host-error", "SYS_host_error");
+	if (*val & CTRL_EXIT)
+		symif.sys_exit();
 
 	*val = 0; // reset
 }

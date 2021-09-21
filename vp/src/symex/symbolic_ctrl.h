@@ -32,8 +32,8 @@
 
 // This class implements a SystemC peripheral for interacting with the
 // symbolic execution engine. Currently, this peripheral can be used to
-// either mark a specified memory range as symbolic or to signal an
-// error condition from the executed software.
+// mark a specified memory range as symbolic, signal an error condition,
+// or cause execution for the current path to terminate.
 //
 // For this purpose three 32 bit memory mapped registers are provided:
 //
@@ -44,7 +44,10 @@
 // In order to mark memory as symbolic the address register needs to be
 // written and afterwards the size register needs to be written. To
 // signal an error condition the 31th bit in the control register must
-// be set, all other bits are presently reserved for future use.
+// be set, the 30th bit can be used to terminate execution of for the
+// current path. All other bits are reserved for future use.
+//
+// In a sense, this is a specialized version of the syscall peripheral.
 class SymbolicCTRL : public sc_core::sc_module {
 private:
 	RegisterRange reg_addr{0x0, sizeof(uint32_t)};
