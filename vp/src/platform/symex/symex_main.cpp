@@ -69,7 +69,7 @@ struct SymexOptions : public Options {
 public:
 	typedef unsigned int addr_t;
 
-	addr_t mem_size = 1024 * 1024 * 512;  // 512 MB mem
+	addr_t mem_size = 1024 * 1024 * 32;  // 32 MB mem
 	addr_t mem_start_addr = 0x00000000;
 	addr_t mem_end_addr = mem_start_addr + mem_size - 1;
 
