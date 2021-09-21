@@ -50,6 +50,7 @@
 #include "symbolic_context.h"
 #include "symbolic_explore.h"
 #include "symbolic_ctrl.h"
+#include "symex_sensor.h"
 #include "syscall.h"
 #include "platform/common/options.h"
 
@@ -79,6 +80,8 @@ public:
 	addr_t sys_end_addr = 0x020103ff;
 	addr_t sym_start_addr = 0x02020000;
 	addr_t sym_end_addr = 0x02020032;
+	addr_t sensor_start_addr = 0x02020100;
+	addr_t sensor_end_addr = 0x02020132;
 
 	bool quiet = false;
 
@@ -101,9 +104,10 @@ int sc_main(int argc, char **argv) {
 	MMU mmu(core);
 	CombinedMemoryInterface core_mem_if("MemoryInterface0", core, &mmu);
 	SymbolicMemory mem("mem", symbolic_context.solver, opt.mem_size);
+	SymbolicSensor sensor("sensor", symbolic_context);
 	SymbolicCTRL symctrl("symctrl", core);
 	ELFLoader loader(opt.input_program.c_str());
-	SimpleBus<2, 4> bus("SimpleBus");
+	SimpleBus<2, 5> bus("SimpleBus");
 	SyscallHandler sys("SyscallHandler");
 	CLINT<1> clint("CLINT");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
@@ -131,6 +135,7 @@ int sc_main(int argc, char **argv) {
 	bus.ports[1] = new PortMapping(opt.clint_start_addr, opt.clint_end_addr);
 	bus.ports[2] = new PortMapping(opt.sys_start_addr, opt.sys_end_addr);
 	bus.ports[3] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
+	bus.ports[4] = new PortMapping(opt.sensor_start_addr, opt.sensor_end_addr);
 
 	// connect TLM sockets
 	core_mem_if.isock.bind(bus.tsocks[0]);
@@ -139,6 +144,7 @@ int sc_main(int argc, char **argv) {
 	bus.isocks[1].bind(clint.tsock);
 	bus.isocks[2].bind(sys.tsock);
 	bus.isocks[3].bind(symctrl.tsock);
+	bus.isocks[4].bind(sensor.tsock);
 
 	// connect interrupt signals/communication
 	clint.target_harts[0] = &core;
