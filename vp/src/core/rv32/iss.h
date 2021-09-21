@@ -271,11 +271,6 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
             tracer.add(cond, *expr->symbolic);
     };
 
-    void make_symbolic(size_t index) override {
-        std::string name = "x" + std::to_string(index);
-        regs.write(index, ctx.getSymbolicWord(name));
-    }
-
     void make_symbolic(uint32_t addr, size_t size) override {
         std::string name = std::string("memory") + "<" + std::to_string(addr) + ">";
 
