@@ -4,25 +4,15 @@ A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbo
 
 ## About
 
-This software allows symbolic execution (or more specifically concolic
-testing) of software compiled for RISC-V RV32. Registers or memory values can
-be marked symbolic explicitly using an intercepted `ECALL` instruction
-or by introducing symbolic values through a provided SystemC TLM-2.0
-extension. Branches based on introduced symbolic values are tracked and
-as soon as execution terminates new assignments for symbolic variables
-are determined, which discover new paths through the program, by negating
-encountered branch conditions (Dynamic Symbolic Execution). For each new
-assignment, the SystemC simulation is restarted from the beginning.
-After all encountered branches have been negated, the virtual prototype
-terminates.
-
-Errors are signaled by the executed software through a custom `ECALL`.
-This `ECALL` can, for instance, be used in software `panic` handlers.
-For each path causing an invocation of this `ECALL` a test file with
-concrete input values is created. This test file can be replayed by
-pointing the `SYMEX_TESTCASE` environment variable to it. It is also
-possible to terminate execution upon encountering the first error using
-the `SYMEX_ERREXIT` environment variable.
+This software allows symbolic execution (or more specifically [concolic
+testing][wikipedia ct]) of RISC-V RV32 machine code. Symbolic variables
+can be introduced through modeled hardware peripherals. Branches based
+on introduced symbolic values are tracked and as soon as execution
+terminates new assignments for symbolic variables are determined by
+negating encountered branch conditions (Dynamic Symbolic Execution). For
+each new assignment, the software [simulation is restarted][systemc restart]
+from the beginning, thereby (ideally) enabling exploration of all paths
+through the program based on the introduced symbolic variables.
 
 ## Cloning
 
@@ -66,41 +56,50 @@ Executable binaries are available in `/home/riscv-vp/riscv-vp/vp/build/bin`.
 
 ## Usage
 
-Consider the following assembly example program:
+In regards to using `symex-vp` for software execution it behaves like a
+normal virtual prototype and should be able to execute any `RV32IMC`
+binaries. In order to utilize the symbolic execution features provided
+by `symex-vp`, the following additional aspects have to be consider for
+software testing. Communication between software and the virtual
+prototype is achieved through memory-mapped IO with a provided
+`SymbolicCTRL` peripheral.
 
-	.globl _start
-	_start:
+1. **Symbolic Inputs:** In order to explore different paths through the
+   program, inputs based on which path exploration should take place
+   need to be marked as symbolic. Symbolic variables can be introduced
+   through SystemC peripherals which return symbolic variables through
+   a TLM 2.0 extension as part of memory-mapped I/O. For example, it is
+   possible to model an Ethernet peripheral using SystemC which returns
+   symbolic variables for network packets and thereby allows exploring
+   paths through the network stack of the executed software.
+   Alternatively, it is also possible to declare variables as symbolic
+   manually through the aforementioned `SymbolicCTRL` peripheral.
+2. **Termination Points:** Since `symex-vp` restarts the entire SystemC
+   simulation for each new assignment of symbolic input variables,
+   termination points need to be defined for the simulated software. For
+   example, when exploring the network stack of the executed software,
+   it may be sufficient to terminate software simulation as soon as the
+   symbolic network packet was handled by the network stack. Termination
+   points must presently be declared by the executed software by writing
+   to a control register in the memory-mapped `SymbolicCTRL` peripheral.
+3. **Path Analyzers:** In order to find errors using symbolic execution,
+   a so-called path analyzer needs to be employed on each executed path.
+   For each executed path, the employed path analyzer needs to decide if
+   the path constitutes an error case. For example, errors may include
+   violation of [spatial memory safety][dac checkedc],
+   [stack overflows][fdl stack], et cetera. Presently, we mostly rely on
+   the executed software to signal an error condition to the virtual
+   prototype using the `SymbolicCTRL` peripheral. For example, this
+   allows signaling errors from software-specific panic handlers.
 
-	/* Make word (4 bytes) at addr 0x0 symbolic */
-	li a7, 96 /* SYS_sym_mem */
-	li a0, 0  /* address 0x0 */
-	li a1, 4  /* 4 bytes */
-	ecall     /* execute make_symbolic ecall */
+## Usage Examples
 
-	/* Load symbolic memory word into register a1 */
-	lw   a1, 0(t0)
-
-	li a2, 23
-	blt  a2, a1, true
-	addi a3, a3, 1
-	true:
-	addi a3, a3, 2
-
-	li a7, 93 /* SYS_exit */
-	ecall     /* Signal end of execution */
-
-This example program contains a single branch instruction (`BLT`). The
-program can be compiled using:
-
-	$ riscv32-unknown-elf-gcc -o main main.S -march=rv32i -mabi=ilp32 -nostartfiles
-
-Afterwards, execute it using:
-
-	$ symex-vp --intercept-syscalls main
-
-The `symex-vp` will discover two paths through this program. One where
-`BLT` jumps to `true` and one where it doesn't. The value of the `a3`
-register will differ in these two executions.
+Usage examples which demonstrate the three aspects mentioned in the
+previous section can be found in the `./examples` subdirectory. For
+instance, the `./examples/zig-out-of-bounds` demonstrates the discovery
+of out-of-bounds array accesses using `symex-vp`. More information on
+individual example applications is available in the `README.md` file in
+the `./examples` subdirectory.
 
 ## Provided VPs
 
@@ -163,6 +162,7 @@ copyright headers of individual files for more information.
 
 [riscv-vp github]: https://github.com/agra-uni-bremen/riscv-vp
 [wikipedia symex]: https://en.wikipedia.org/wiki/Symbolic_execution
+[wikipedia ct]: https://en.wikipedia.org/wiki/Concolic_testing
 [z3 repo]: https://github.com/Z3Prover/z3
 [llvm website]: https://llvm.org/
 [cmake website]: https://cmake.org/
@@ -173,3 +173,6 @@ copyright headers of individual files for more information.
 [riscv-compliance github]: https://github.com/riscv/riscv-compliance/
 [date conference]: https://www.date-conference.com/
 [symex-vp paper]: https://ieeexplore.ieee.org/document/9474149
+[systemc restart]: https://github.com/accellera-official/systemc/issues/8
+[dac checkedc]: https://www.informatik.uni-bremen.de/agra/doc/konf/DAC-2021-CheckedC-Concolic-Testing.pdf
+[fdl stack]: https://www.informatik.uni-bremen.de/agra/doc/konf/FDL21_VP_Stacksize.pdf
