@@ -13,6 +13,8 @@ negating encountered branch conditions (Dynamic Symbolic Execution). For
 each new assignment, the software [simulation is restarted][systemc restart]
 from the beginning, thereby (ideally) enabling exploration of all paths
 through the program based on the introduced symbolic variables.
+Presently, address concretization is utilized as a memory model, thus
+the analysis is sound but not complete.
 
 ## Cloning
 
