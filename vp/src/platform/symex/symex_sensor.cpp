@@ -64,7 +64,7 @@ SymbolicSensor::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &del
 			return;
 		}
 
-		auto sval = ctx.getSymbolicWord("SymbolicSensorByte" + std::to_string(nread++));
+		auto sval = ctx.getSymbolicWord("SymbolicSensorValue" + std::to_string(nread++));
 		sval = sval->urem(solver.BVC(std::nullopt, upper_bound - lower_bound));
 		sval = sval->add(solver.BVC(std::nullopt, lower_bound));
 
