@@ -35,7 +35,7 @@ enum {
 /* Next header value for ICMPv6 */
 #define PROTNUM_ICMPV6 (58)
 
-SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, size_t pktsiz)
+SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &fmt)
   : solver(_ctx.solver), ctx(_ctx.ctx) {
 	irq = irqsrc;
 
@@ -44,41 +44,12 @@ SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicCon
 	esc_end = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_END);
 	esc_esc = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_ESC);
 
-	this->create_input(pktsiz);
+	pktfmt = fmt.get_input();
 	tsock.register_b_transport(this, &SymbolicSLIP::transport);
 }
 
 SymbolicSLIP::~SymbolicSLIP(void) {
 	return;
-}
-
-void SymbolicSLIP::push_byte(uint8_t byte) {
-	switch (byte) {
-	case SLIP_END:
-		input.push(esc);
-		input.push(esc_end);
-		break;
-	case SLIP_ESC:
-		input.push(esc);
-		input.push(esc_esc);
-		break;
-	default:
-		input.push(solver.BVC(std::nullopt, byte));
-		break;
-	}
-}
-
-void SymbolicSLIP::create_input(size_t pktsiz) {
-	/* Make sure created data is always treated as an IPv6 packet */
-	input.push(solver.BVC(std::nullopt, (uint8_t)IP_VERSION6));
-
-	for (size_t i = 0; i < pktsiz; i++) {
-		auto byte = ctx.getSymbolicByte("slip_byte" + std::to_string(i));
-		input.push(byte->urem(end));
-	}
-
-	/* Mark end of packet */
-	input.push(end);
 }
 
 uint32_t *SymbolicSLIP::addr2register(uint64_t addr) {
@@ -102,6 +73,14 @@ uint32_t *SymbolicSLIP::addr2register(uint64_t addr) {
 	return NULL;
 }
 
+unsigned SymbolicSLIP::rxrem(void) {
+	if (off > pktfmt->getWidth())
+		return 0; // empty
+
+	assert((pktfmt->getWidth() % CHAR_BIT) == 0);
+	return (pktfmt->getWidth() - off) / CHAR_BIT;
+}
+
 void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &delay) {
 	auto addr = trans.get_address();
 	auto cmd = trans.get_command();
@@ -122,21 +101,32 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 		case RXDATA_REG_ADDR:
 			/* Many UART drivers drain the UART before accepting interrupts,
 			 * thus we only send data after receive interrupts have been enabled. */
-			if (input.empty() || !(ie & UART_RXWM)) {
+			if ((off > pktfmt->getWidth()) || !(ie & UART_RXWM)) {
 				rxdata = 1 << 31;
 			} else {
-				auto value = input.front()->zext(32);
-				input.pop();
+				// TODO: Perform SLIP escaping
 
-				rxdata = solver.getValue<uint32_t>(value->concrete);
+				std::shared_ptr<clover::ConcolicValue> v;
+				if (off == pktfmt->getWidth()) {
+					v = end;
+				} else {
+					v = pktfmt->extract(off, CHAR_BIT);
+				}
 
-				auto ext = new SymbolicExtension(value);
+				assert(v->getWidth() == CHAR_BIT);
+				off += CHAR_BIT;
+
+				// zero extend to ensure that empty bit is unset.
+				auto reg = v->zext(32);
+				rxdata = solver.getValue<uint32_t>(reg->concrete);
+
+				auto ext = new SymbolicExtension(reg);
 				trans.set_extension(ext);
 			}
 			break;
 		case IP_REG_ADDR:
 			ip = UART_TXWM; // Transmit is always ready
-			if (input.size() > UART_CTRL_CNT(rxctrl))
+			if (rxrem() > UART_CTRL_CNT(rxctrl))
 				ip |= UART_RXWM;
 			break;
 		}
@@ -151,7 +141,7 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 	else if (cmd == tlm::TLM_WRITE_COMMAND)
 		memcpy(reg, ptr, sizeof(uint32_t));
 
-	if ((ie & UART_RXWM) && input.size() > UART_CTRL_CNT(rxctrl))
+	if ((ie & UART_RXWM) && rxrem() > UART_CTRL_CNT(rxctrl))
 		plic->gateway_trigger_interrupt(irq);
 	// Don't trigger transmit interrupts explicitly
 }
