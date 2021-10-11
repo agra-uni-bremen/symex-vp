@@ -3,9 +3,10 @@
 
 #include <assert.h>
 #include <endian.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "symbolic_format.h"
 
@@ -60,8 +61,11 @@ public:
 SymbolicFormat::SymbolicFormat(SymbolicContext &_ctx, std::string path)
   : ctx(_ctx.ctx), solver(_ctx.solver)
 {
-	if ((fd = open(path.c_str(), O_RDONLY)) == -1)
+	if (path == "-") {
+		fd = STDIN_FILENO;
+	} else if ((fd = open(path.c_str(), O_RDONLY)) == -1) {
 		throw std::system_error(errno, std::generic_category());
+	}
 
 	return;
 }
