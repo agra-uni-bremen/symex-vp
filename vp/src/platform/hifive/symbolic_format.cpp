@@ -11,23 +11,17 @@
 #include "symbolic_format.h"
 
 typedef enum {
-	CONCRETE_UINT = 0x1,
-	CONCRETE_SINT = 0x2,
-	CONCRETE_BYTES = 0xfe,
-	SYMBOLIC_BYTES = 0xff,
+	SYMBOLIC_BYTES = 0x1,
+	CONCRETE_BYTES = 0x2,
 } FieldType;
 
 FieldType
 intToFtype(uint8_t t) {
 	switch (t) {
-	case CONCRETE_UINT:
-		return CONCRETE_UINT;
-	case CONCRETE_SINT:
-		return CONCRETE_SINT;
-	case CONCRETE_BYTES:
-		return CONCRETE_BYTES;
 	case SYMBOLIC_BYTES:
 		return SYMBOLIC_BYTES;
+	case CONCRETE_BYTES:
+		return CONCRETE_BYTES;
 	default:
 		throw std::invalid_argument("invalid field type");
 	}
@@ -94,10 +88,15 @@ SymbolicFormat::next_field(void)
 		throw std::out_of_range("not value field of given length");
 
 	std::shared_ptr<clover::ConcolicValue> v;
-	if (ftype == SYMBOLIC_BYTES) {
+	switch (ftype) {
+	case SYMBOLIC_BYTES:
 		v = ctx.getSymbolicBytes("input_field" + std::to_string(numSymField++), field.bytelen);
-	} else {
+		break;
+	case CONCRETE_BYTES:
 		v = solver.BVC(field.value, field.bytelen);
+		break;
+	default:
+		assert(0 && "unreachable");
 	}
 
 	return v->extract(0, field.bitlen);
