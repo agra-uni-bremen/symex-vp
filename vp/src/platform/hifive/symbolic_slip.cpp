@@ -35,8 +35,8 @@ enum {
 /* Next header value for ICMPv6 */
 #define PROTNUM_ICMPV6 (58)
 
-SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &fmt)
-  : solver(_ctx.solver), ctx(_ctx.ctx) {
+SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &_fmt)
+  : solver(_ctx.solver), ctx(_ctx.ctx), fmt(_fmt) {
 	irq = irqsrc;
 
 	end = solver.BVC(std::nullopt, (uint8_t)SLIP_END);
@@ -44,7 +44,6 @@ SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicCon
 	esc_end = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_END);
 	esc_esc = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_ESC);
 
-	pktfmt = fmt.get_input();
 	tsock.register_b_transport(this, &SymbolicSLIP::transport);
 }
 
@@ -73,14 +72,6 @@ uint32_t *SymbolicSLIP::addr2register(uint64_t addr) {
 	return NULL;
 }
 
-unsigned SymbolicSLIP::rxrem(void) {
-	if (off > pktfmt->getWidth())
-		return 0; // empty
-
-	assert((pktfmt->getWidth() % CHAR_BIT) == 0);
-	return (pktfmt->getWidth() - off) / CHAR_BIT;
-}
-
 void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &delay) {
 	auto addr = trans.get_address();
 	auto cmd = trans.get_command();
@@ -101,20 +92,17 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 		case RXDATA_REG_ADDR:
 			/* Many UART drivers drain the UART before accepting interrupts,
 			 * thus we only send data after receive interrupts have been enabled. */
-			if ((off > pktfmt->getWidth()) || !(ie & UART_RXWM)) {
+			if (empty || !(ie & UART_RXWM)) {
 				rxdata = 1 << 31;
 			} else {
 				// TODO: Perform SLIP escaping
 
-				std::shared_ptr<clover::ConcolicValue> v;
-				if (off == pktfmt->getWidth()) {
+				std::shared_ptr<clover::ConcolicValue> v = fmt.next_byte();
+				if (!v) {
 					v = end;
-				} else {
-					v = pktfmt->extract(off, CHAR_BIT);
+					empty = true;
 				}
-
 				assert(v->getWidth() == CHAR_BIT);
-				off += CHAR_BIT;
 
 				// zero extend to ensure that empty bit is unset.
 				auto reg = v->zext(32);
@@ -126,7 +114,7 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 			break;
 		case IP_REG_ADDR:
 			ip = UART_TXWM; // Transmit is always ready
-			if (rxrem() > UART_CTRL_CNT(rxctrl))
+			if (fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl))
 				ip |= UART_RXWM;
 			break;
 		}
@@ -141,7 +129,7 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 	else if (cmd == tlm::TLM_WRITE_COMMAND)
 		memcpy(reg, ptr, sizeof(uint32_t));
 
-	if ((ie & UART_RXWM) && rxrem() > UART_CTRL_CNT(rxctrl))
+	if ((ie & UART_RXWM) && fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl))
 		plic->gateway_trigger_interrupt(irq);
 	// Don't trigger transmit interrupts explicitly
 }

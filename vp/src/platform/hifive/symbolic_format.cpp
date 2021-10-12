@@ -61,6 +61,9 @@ SymbolicFormat::SymbolicFormat(SymbolicContext &_ctx, std::string path)
 		throw std::system_error(errno, std::generic_category());
 	}
 
+	input = get_input();
+	offset = input->getWidth();
+
 	return;
 }
 
@@ -112,11 +115,38 @@ SymbolicFormat::get_input(void)
 			r = field;
 			continue;
 		}
-		r = field->concat(r);
+		r = r->concat(field);
 	}
 
 	assert(r != nullptr);
 	assert(r->getWidth() % CHAR_BIT == 0);
 
 	return r;
+}
+
+std::shared_ptr<clover::ConcolicValue>
+SymbolicFormat::next_byte(void)
+{
+	if (offset == 0)
+		return nullptr;
+
+	assert(offset % CHAR_BIT == 0);
+	offset -= CHAR_BIT;
+
+	auto byte = input->extract(offset, CHAR_BIT);
+	assert(byte->getWidth() == CHAR_BIT);
+
+	return byte;
+}
+
+size_t
+SymbolicFormat::remaning_bytes(void)
+{
+	if (offset == 0)
+		return 0; // empty
+
+	auto width = input->getWidth();
+	assert(width % CHAR_BIT == 0);
+
+	return (width - (width - offset)) / CHAR_BIT;
 }
