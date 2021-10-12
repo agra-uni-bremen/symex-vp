@@ -22,7 +22,10 @@ private:
 public:
 	SymbolicFormat(SymbolicContext &_ctx, std::string path);
 
-	/* XXX: Could be implemented as an Iterator */
+	/* XXX: Could be implemented as an Iterator.
+	 *
+	 * Also: KLEE Array Type would be useful here ReadLSB, ReadMSB, …
+	 * See:  https://gitlab.informatik.uni-bremen.de/riscv/clover/-/issues/7 */
 	std::shared_ptr<clover::ConcolicValue> next_byte(void);
 	size_t remaning_bytes(void);
 };
