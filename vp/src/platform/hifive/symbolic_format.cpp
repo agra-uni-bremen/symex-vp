@@ -96,7 +96,7 @@ SymbolicFormat::next_field(void)
 		v = ctx.getSymbolicBytes("input_field" + std::to_string(numSymField++), field.bytelen);
 		break;
 	case CONCRETE_BYTES:
-		v = solver.BVC(field.value, field.bytelen);
+		v = solver.BVC(field.value, field.bytelen, true);
 		break;
 	default:
 		assert(0 && "unreachable");
