@@ -129,13 +129,13 @@ public:
 	addr_t dram_end_addr = dram_start_addr + dram_size - 1;
 
 	bool enable_can = false;
-	std::string input_format;
+	std::string input_format = "";
 
 	HifiveOptions(void) {
         	// clang-format off
 		add_options()
 			("enable-can", po::bool_switch(&enable_can), "enable support for CAN peripheral")
-			("input-format", po::value<std::string>(&input_format)->required(), "symfmt input format specification");
+			("input-format", po::value<std::string>(&input_format), "symfmt input format specification");
         	// clang-format on
 	}
 };

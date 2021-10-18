@@ -55,7 +55,10 @@ public:
 SymbolicFormat::SymbolicFormat(SymbolicContext &_ctx, std::string path)
   : ctx(_ctx.ctx), solver(_ctx.solver)
 {
-	if (path == "-") {
+	if (path == "") {
+		fd = -1;
+		return;
+	} else if (path == "-") {
 		fd = STDIN_FILENO;
 	} else if ((fd = open(path.c_str(), O_RDONLY)) == -1) {
 		throw std::system_error(errno, std::generic_category());
@@ -127,7 +130,7 @@ SymbolicFormat::get_input(void)
 std::shared_ptr<clover::ConcolicValue>
 SymbolicFormat::next_byte(void)
 {
-	if (offset == 0)
+	if (fd == -1 || offset == 0)
 		return nullptr;
 
 	assert(offset % CHAR_BIT == 0);
@@ -142,7 +145,7 @@ SymbolicFormat::next_byte(void)
 size_t
 SymbolicFormat::remaning_bytes(void)
 {
-	if (offset == 0)
+	if (fd == -1 || offset == 0)
 		return 0; // empty
 
 	auto width = input->getWidth();
