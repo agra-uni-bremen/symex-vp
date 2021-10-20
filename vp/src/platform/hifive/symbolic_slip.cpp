@@ -28,13 +28,6 @@ enum {
 /* Extracts the interrupt trigger threshold from a control register */
 #define UART_CTRL_CNT(REG) ((REG) >> 16)
 
-/* Value for version field of IP header */
-#define IP_VERSION4 (0x40U)
-#define IP_VERSION6 (0x60U)
-
-/* Next header value for ICMPv6 */
-#define PROTNUM_ICMPV6 (58)
-
 SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &_fmt)
   : solver(_ctx.solver), ctx(_ctx.ctx), fmt(_fmt) {
 	irq = irqsrc;
