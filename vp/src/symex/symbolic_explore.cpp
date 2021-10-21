@@ -79,8 +79,8 @@ report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& acti
 	if (!path.has_value())
 		return;
 
+	std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
 	if (getenv(ERR_EXIT_ENV)) {
-		std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
 		std::cerr << "Exit on first error set, terminating..." << std::endl;
 		exit(EXIT_FAILURE);
 	}
