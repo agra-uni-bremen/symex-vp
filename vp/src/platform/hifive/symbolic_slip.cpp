@@ -122,7 +122,12 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 	else if (cmd == tlm::TLM_WRITE_COMMAND)
 		memcpy(reg, ptr, sizeof(uint32_t));
 
+	bool notify = false;
 	if ((ie & UART_RXWM) && fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl))
+		notify = true;
+	else if (ie & UART_TXWM)
+		notify = true;
+
+	if (notify)
 		plic->gateway_trigger_interrupt(irq);
-	// Don't trigger transmit interrupts explicitly
 }
