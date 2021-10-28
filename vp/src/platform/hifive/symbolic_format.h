@@ -21,6 +21,7 @@ private:
 
 public:
 	SymbolicFormat(SymbolicContext &_ctx, std::string path);
+	~SymbolicFormat(void);
 
 	/* XXX: Could be implemented as an Iterator.
 	 *

@@ -1,6 +1,7 @@
 #include <exception>
 #include <iostream>
 
+#include <err.h>
 #include <assert.h>
 #include <endian.h>
 #include <errno.h>
@@ -68,6 +69,15 @@ SymbolicFormat::SymbolicFormat(SymbolicContext &_ctx, std::string path)
 	offset = input->getWidth();
 
 	return;
+}
+
+SymbolicFormat::~SymbolicFormat(void)
+{
+	if (fd < 0)
+		return;
+
+	if (close(fd) == -1)
+		err(EXIT_FAILURE, "close failed");
 }
 
 std::shared_ptr<clover::ConcolicValue>
