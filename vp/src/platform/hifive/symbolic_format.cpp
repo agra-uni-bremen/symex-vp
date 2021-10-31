@@ -115,6 +115,8 @@ SymbolicFormat::next_field(void)
 		assert(0 && "unreachable");
 	}
 
+	if (field.bitlen * 8 == field.bytelen)
+		return v;
 	return v->extract(0, field.bitlen);
 }
 
