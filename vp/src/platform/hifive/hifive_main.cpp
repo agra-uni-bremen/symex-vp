@@ -56,7 +56,7 @@
 #include "symbolic_context.h"
 #include "symbolic_explore.h"
 #include "symbolic_ctrl.h"
-#include "symbolic_slip.h"
+#include "symbolic_uart.h"
 #include "symbolic_format.h"
 #include "prci.h"
 #include "spi.h"
@@ -174,7 +174,7 @@ int sc_main(int argc, char **argv) {
 	SPI spi2("SPI2");
 	UART uart0("UART0", 3);
 	SymbolicFormat fmt(symbolic_context, opt.input_format);
-	SymbolicSLIP slip("SLIP", 4, symbolic_context, fmt);
+	SymbolicUART uart1("UART1", 4, symbolic_context, fmt);
 	MaskROM maskROM("MASKROM");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
@@ -230,14 +230,14 @@ int sc_main(int argc, char **argv) {
 	bus.isocks[10].bind(sys.tsock);
 	bus.isocks[11].bind(spi1.tsock);
 	bus.isocks[12].bind(spi2.tsock);
-	bus.isocks[13].bind(slip.tsock);
+	bus.isocks[13].bind(uart1.tsock);
 	bus.isocks[14].bind(symctrl.tsock);
 
 	// connect interrupt signals/communication
 	plic.target_harts[0] = &core;
 	gpio0.plic = &plic;
 	uart0.plic = &plic;
-	slip.plic = &plic;
+	uart1.plic = &plic;
 
 	std::vector<debug_target_if *> threads;
 	threads.push_back(&core);

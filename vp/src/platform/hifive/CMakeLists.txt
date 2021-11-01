@@ -3,7 +3,7 @@ add_executable(hifive-vp
         can.cpp
         oled.cpp
         gpio.cpp
-        symbolic_slip.cpp
+        symbolic_uart.cpp
         symbolic_format.cpp
         gpio/gpiocommon.cpp
         gpio/gpio-server.cpp

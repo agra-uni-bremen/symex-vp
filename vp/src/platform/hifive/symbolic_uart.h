@@ -13,17 +13,17 @@
 #include "symbolic_context.h"
 #include "core/common/irq_if.h"
 
-class SymbolicSLIP : public sc_core::sc_module {
+class SymbolicUART : public sc_core::sc_module {
 public:
 	clover::Solver &solver;
 	clover::ExecutionContext &ctx;
 	SymbolicFormat &fmt;
 
 	interrupt_gateway *plic;
-	tlm_utils::simple_target_socket<SymbolicSLIP> tsock;
+	tlm_utils::simple_target_socket<SymbolicUART> tsock;
 
-	SymbolicSLIP(sc_core::sc_module_name, uint32_t, SymbolicContext &_ctx, SymbolicFormat &_fmt);
-	~SymbolicSLIP(void);
+	SymbolicUART(sc_core::sc_module_name, uint32_t, SymbolicContext &_ctx, SymbolicFormat &_fmt);
+	~SymbolicUART(void);
 
 private:
 	uint32_t irq;

@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "symbolic_extension.h"
-#include "symbolic_slip.h"
+#include "symbolic_uart.h"
 
 enum {
 	TXDATA_REG_ADDR = 0x0,
@@ -20,31 +20,20 @@ enum {
 #define UART_RXWM (1 << 1)
 #define UART_FULL (1 << 31)
 
-#define SLIP_END 0300
-#define SLIP_ESC 0333
-#define SLIP_ESC_END 0334
-#define SLIP_ESC_ESC 0335
-
 /* Extracts the interrupt trigger threshold from a control register */
 #define UART_CTRL_CNT(REG) ((REG) >> 16)
 
-SymbolicSLIP::SymbolicSLIP(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &_fmt)
+SymbolicUART::SymbolicUART(sc_core::sc_module_name, uint32_t irqsrc, SymbolicContext &_ctx, SymbolicFormat &_fmt)
   : solver(_ctx.solver), ctx(_ctx.ctx), fmt(_fmt) {
 	irq = irqsrc;
-
-	end = solver.BVC(std::nullopt, (uint8_t)SLIP_END);
-	esc = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC);
-	esc_end = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_END);
-	esc_esc = solver.BVC(std::nullopt, (uint8_t)SLIP_ESC_ESC);
-
-	tsock.register_b_transport(this, &SymbolicSLIP::transport);
+	tsock.register_b_transport(this, &SymbolicUART::transport);
 }
 
-SymbolicSLIP::~SymbolicSLIP(void) {
+SymbolicUART::~SymbolicUART(void) {
 	return;
 }
 
-uint32_t *SymbolicSLIP::addr2register(uint64_t addr) {
+uint32_t *SymbolicUART::addr2register(uint64_t addr) {
 	switch (addr) {
 	case TXDATA_REG_ADDR:
 		return &txdata;
@@ -65,7 +54,7 @@ uint32_t *SymbolicSLIP::addr2register(uint64_t addr) {
 	return NULL;
 }
 
-void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &delay) {
+void SymbolicUART::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &delay) {
 	auto addr = trans.get_address();
 	auto cmd = trans.get_command();
 	auto len = trans.get_data_length();
@@ -82,19 +71,20 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 		case TXDATA_REG_ADDR:
 			txdata = 0; // Pretend to be always ready to transmit
 			break;
-		case RXDATA_REG_ADDR:
+		case RXDATA_REG_ADDR: {
 			/* Many UART drivers drain the UART before accepting interrupts,
 			 * thus we only send data after receive interrupts have been enabled. */
-			if (empty || !(ie & UART_RXWM)) {
-				rxdata = 1 << 31;
-			} else {
-				// TODO: Perform SLIP escaping
-
-				std::shared_ptr<clover::ConcolicValue> v = fmt.next_byte();
-				if (!v) {
-					v = end;
+			std::shared_ptr<clover::ConcolicValue> v = nullptr;
+			if ((ie & UART_RXWM) && !empty) {
+				v = fmt.next_byte();
+				if (v == nullptr)
 					empty = true;
-				}
+			}
+
+			if (!v) {
+				rxdata = 1 << 31; // empty
+			} else {
+				assert(v != nullptr);
 				assert(v->getWidth() == CHAR_BIT);
 
 				// zero extend to ensure that empty bit is unset.
@@ -105,6 +95,7 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 				trans.set_extension(ext);
 			}
 			break;
+		}
 		case IP_REG_ADDR:
 			ip = UART_TXWM; // Transmit is always ready
 			if (fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl))
@@ -123,11 +114,14 @@ void SymbolicSLIP::transport(tlm::tlm_generic_payload &trans, sc_core::sc_time &
 		memcpy(reg, ptr, sizeof(uint32_t));
 
 	bool notify = false;
-	if ((ie & UART_RXWM) && fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl))
+	if ((ie & UART_RXWM) && fmt.remaning_bytes() > UART_CTRL_CNT(rxctrl)) {
+		assert(!empty);
 		notify = true;
+	}
 	else if (ie & UART_TXWM)
 		notify = true;
 
-	if (notify)
+	if (notify) {
 		plic->gateway_trigger_interrupt(irq);
+	}
 }
