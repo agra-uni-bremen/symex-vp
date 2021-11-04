@@ -4,31 +4,35 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <queue>
 #include <systemc>
-#include <fstream>
 #include <tlm_utils/simple_target_socket.h>
 #include <clover/clover.h>
 
 #include "symbolic_format.h"
 #include "symbolic_context.h"
+#include "symbolic_extension.h"
+
 #include "core/common/irq_if.h"
+#include "util/tlm_map.h"
+#include "platform/common/async_event.h"
 
 class SymbolicUART : public sc_core::sc_module {
 public:
-	clover::Solver &solver;
-	clover::ExecutionContext &ctx;
-	SymbolicFormat &fmt;
-
 	interrupt_gateway *plic;
 	tlm_utils::simple_target_socket<SymbolicUART> tsock;
 
 	SymbolicUART(sc_core::sc_module_name, uint32_t, SymbolicContext &_ctx, SymbolicFormat &_fmt);
 	~SymbolicUART(void);
 
+	SC_HAS_PROCESS(SymbolicUART);
+
 private:
+	clover::Solver &solver;
+	clover::ExecutionContext &ctx;
+	SymbolicFormat &fmt;
+
 	uint32_t irq;
-	unsigned off = 0;
-	bool empty = false;
 
 	// memory mapped configuration registers
 	uint32_t txdata = 0;
@@ -39,13 +43,14 @@ private:
 	uint32_t ip = 0;
 	uint32_t div = 0;
 
-	std::shared_ptr<clover::ConcolicValue> end;
-	std::shared_ptr<clover::ConcolicValue> esc;
-	std::shared_ptr<clover::ConcolicValue> esc_end;
-	std::shared_ptr<clover::ConcolicValue> esc_esc;
+	AsyncEvent asyncEvent;
+	std::queue<std::shared_ptr<clover::ConcolicValue>> rx_fifo;
 
-	uint32_t *addr2register(uint64_t addr);
+	vp::map::LocalRouter router = {"SymbolicUART"};
+
+	void register_access_callback(const vp::map::register_access_t &);
 	void transport(tlm::tlm_generic_payload &, sc_core::sc_time &);
+	void interrupt(void);
 };
 
 #endif
