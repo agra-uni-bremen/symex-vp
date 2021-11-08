@@ -161,6 +161,8 @@ struct register_access_t {
 	callback_t fn;
 	sc_core::sc_time &delay;
 	uint64_t addr;
+
+	tlm::tlm_generic_payload &trans;
 };
 
 struct RegisterMapping : public AbstractMapping {
@@ -230,7 +232,7 @@ struct RegisterMapping : public AbstractMapping {
 		if (cmd == tlm::TLM_WRITE_COMMAND)
 			nv = *new_vptr;
 
-		handler({cmd == tlm::TLM_READ_COMMAND, cmd == tlm::TLM_WRITE_COMMAND, r.vptr, nv, fn, delay, addr});
+		handler({cmd == tlm::TLM_READ_COMMAND, cmd == tlm::TLM_WRITE_COMMAND, r.vptr, nv, fn, delay, addr, trans});
 		return true;
 	}
 };
