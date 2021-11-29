@@ -130,7 +130,16 @@ void SymbolicUART::register_access_callback(const vp::map::register_access_t &r)
 
 	r.fn();
 
-	if (notify || (r.write && r.vptr == &ie))
+	// If the interrupt has just been enabled (i.e. IE register was
+	// modified) then delay raising of the interrupt by a few ms.
+	// This is necessary as RIOT uses the same stack for
+	// initialization and interrupt handling. If the interrupt is
+	// received directly after enabling it, then the initialization
+	// hasn't finished yet and the interrupt handler will overwrite
+	// its stack space.
+	if (r.write && r.vptr == &ie)
+		asyncEvent.notify(sc_core::sc_time(100, sc_core::SC_MS));
+	else if (notify)
 		asyncEvent.notify();
 }
 
