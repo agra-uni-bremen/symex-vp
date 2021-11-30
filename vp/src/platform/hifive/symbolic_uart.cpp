@@ -115,6 +115,10 @@ void SymbolicUART::register_access_callback(const vp::map::register_access_t &r)
 			if (rx_fifo.size() > UART_CTRL_CNT(rxctrl))
 				ret |= UART_RXWM;
 			ip = ret;
+		} else if (r.vptr == &ie) {
+			// do nothing
+		} else if (r.vptr == &div) {
+			// just return the last set value
 		} else {
 			std::cerr << "invalid offset for UART " << std::endl;
 		}
