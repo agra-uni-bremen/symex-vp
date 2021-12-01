@@ -132,6 +132,11 @@ void SymbolicUART::register_access_callback(const vp::map::register_access_t &r)
 			notify = true;
 	}
 
+	// We are always ready to transmit thus, if TX_WM is enabled
+	// signal a transmit interrupt.
+	if (ie & UART_TXWM)
+		notify = true;
+
 	r.fn();
 
 	// If the interrupt has just been enabled (i.e. IE register was
