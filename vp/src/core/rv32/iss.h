@@ -298,9 +298,7 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
 	void release_lr_sc_reservation() {
 		lr_sc_counter = 0;
-#if 0
 		mem->atomic_unlock();
-#endif
 	}
 
 	void fp_prepare_instr();
@@ -340,8 +338,20 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 		}
 	}
 
-	inline void execute_amo(Instruction &instr, std::function<int32_t(int32_t, int32_t)> operation) {
-		throw std::string(__func__) + " not implemented";
+	inline void execute_amo(Instruction &instr, std::function<RegFile::RegValue(RegFile::RegValue, RegFile::RegValue)> operation) {
+		auto addr = regs[instr.rs1()];
+		trap_check_addr_alignment<4, false>(addr);
+		std::shared_ptr<clover::ConcolicValue> data;
+		try {
+			data = mem->atomic_load_word(addr);
+		} catch (SimulationTrap &e) {
+			if (e.reason == EXC_LOAD_ACCESS_FAULT)
+				e.reason = EXC_STORE_AMO_ACCESS_FAULT;
+			throw e;
+		}
+		auto val = operation(data, regs[instr.rs2()]);
+		mem->atomic_store_word(addr, val);
+		regs.write(instr.rd(), data);
 	}
 
 	inline bool m_mode() {
