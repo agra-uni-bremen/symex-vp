@@ -32,9 +32,9 @@
 class SymbolicMemory : public sc_core::sc_module, public load_if {
 private:
 	clover::Solver &solver;
-	size_t size;
 
 public:
+	size_t size;
 	clover::ConcolicMemory memory;
 
 	typedef std::shared_ptr<clover::ConcolicValue> Data;

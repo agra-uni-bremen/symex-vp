@@ -56,8 +56,9 @@
 #include "symbolic_context.h"
 #include "symbolic_explore.h"
 #include "symbolic_ctrl.h"
+#include "symbolic_uart.h"
+#include "symbolic_format.h"
 #include "prci.h"
-#include "slip.h"
 #include "spi.h"
 #include "uart.h"
 #include "oled.hpp"
@@ -128,13 +129,13 @@ public:
 	addr_t dram_end_addr = dram_start_addr + dram_size - 1;
 
 	bool enable_can = false;
-	std::string tun_device = "tun0";
+	std::string input_format = "";
 
 	HifiveOptions(void) {
         	// clang-format off
 		add_options()
 			("enable-can", po::bool_switch(&enable_can), "enable support for CAN peripheral")
-			("tun-device", po::value<std::string>(&tun_device), "tun device used by SLIP");
+			("input-format", po::value<std::string>(&input_format), "symfmt input format specification");
         	// clang-format on
 	}
 };
@@ -172,7 +173,8 @@ int sc_main(int argc, char **argv) {
 	spi1.connect(2, oled);
 	SPI spi2("SPI2");
 	UART uart0("UART0", 3);
-	SLIP slip("SLIP", 4, opt.tun_device);
+	SymbolicFormat fmt(symbolic_context, opt.input_format);
+	SymbolicUART uart1("UART1", 4, symbolic_context, fmt);
 	MaskROM maskROM("MASKROM");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
@@ -203,6 +205,8 @@ int sc_main(int argc, char **argv) {
 	bus.ports[14] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
 
 	loader.load_executable_image(flash, flash.size, opt.flash_start_addr, false);
+	loader.load_executable_image(dram, dram.size, opt.dram_start_addr, false);
+
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
 	sys.init(nullptr, 0, loader.get_heap_addr());
 	sys.register_core(&core);
@@ -226,14 +230,14 @@ int sc_main(int argc, char **argv) {
 	bus.isocks[10].bind(sys.tsock);
 	bus.isocks[11].bind(spi1.tsock);
 	bus.isocks[12].bind(spi2.tsock);
-	bus.isocks[13].bind(slip.tsock);
+	bus.isocks[13].bind(uart1.tsock);
 	bus.isocks[14].bind(symctrl.tsock);
 
 	// connect interrupt signals/communication
 	plic.target_harts[0] = &core;
 	gpio0.plic = &plic;
 	uart0.plic = &plic;
-	slip.plic = &plic;
+	uart1.plic = &plic;
 
 	std::vector<debug_target_if *> threads;
 	threads.push_back(&core);

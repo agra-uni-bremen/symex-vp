@@ -127,6 +127,8 @@ The following environment variables can be set:
   error (see below) during symbolic execution of the software.
 * **SYMEX_TIMEOUT:** This can be used to configure the solver timeout
   of the employed SMT solver, by default no timeout is used.
+* **SYMEX_TIMEBUDGET:** Time budget for path exploration, by default the
+  software is explored until all branches have been negated.
 * **SYMEX_TESTCASE:** This environment variable can point to a test case
   file for replaying inputs causing an error. This is most useful in
   conjunction with `--debug-mode`.

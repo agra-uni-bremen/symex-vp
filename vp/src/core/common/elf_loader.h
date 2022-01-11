@@ -78,6 +78,14 @@ struct GenericElfLoader {
 			if (use_vaddr)
 				addr = p->p_vaddr;
 
+			// If the modeled virtual platform separates Flash and DRAM
+			// (like the hifive-vp does) we call load_executable_image
+			// once for each memory segment (i.e. once for the Flash and
+			// once for the DRAM). As such, we must skip all ELF regions
+			// which are not covered by the passed memory segment.
+			if (!(addr >= offset && addr < (offset + size)))
+				continue;
+
 			assert ((addr >= offset) &&
 					"Offset overlaps into section");
 

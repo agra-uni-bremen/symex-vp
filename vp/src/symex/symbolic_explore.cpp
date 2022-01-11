@@ -41,6 +41,7 @@
 #include "symbolic_context.h"
 
 #define TESTCASE_ENV "SYMEX_TESTCASE"
+#define TIMEBUDGET_ENV "SYMEX_TIMEBUDGET"
 #define ERR_EXIT_ENV "SYMEX_ERREXIT"
 
 static std::filesystem::path *testcase_path = nullptr;
@@ -78,8 +79,8 @@ report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& acti
 	if (!path.has_value())
 		return;
 
+	std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
 	if (getenv(ERR_EXIT_ENV)) {
-		std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
 		std::cerr << "Exit on first error set, terminating..." << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -135,8 +136,25 @@ explore_paths(int argc, char **argv)
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
 	clover::Trace &tracer = symbolic_context.trace;
 
+	typedef std::chrono::high_resolution_clock::time_point time_point;
+	std::optional<time_point> budget;
+
+	char *timebudget = getenv(TIMEBUDGET_ENV);
+	if (timebudget) {
+		budget = std::chrono::high_resolution_clock::now() +
+			std::chrono::seconds(std::atoi(timebudget));
+	}
+
 	size_t paths_found = 0;
 	do {
+		if (budget.has_value()) {
+			time_point now = std::chrono::high_resolution_clock::now();
+			if (now >= budget) {
+				std::cout << "Time budget exceeded, terminating..." << std::endl;
+				break;
+			}
+		}
+
 		std::cout << std::endl << "##" << std::endl << "# "
 			<< ++paths_found << "th concolic execution" << std::endl
 			<< "##" << std::endl;
