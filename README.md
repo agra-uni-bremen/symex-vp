@@ -18,13 +18,15 @@ the analysis is sound but not complete.
 
 ## Cloning
 
-This repository is a mirror of a private GitLab repository. Used
-submodules point to other private repositories which are also mirrored
-on GitHub. In order to rewrite the submodule URLs properly, clone the
-repository as follows:
+This repository makes use of submodules to include vendored dependencies.
+In order to automatically checkout these submodules clone the repository
+as follows:
 
-	$ git clone https://github.com/agra-uni-bremen/symex-vp
-	$ git config --global url."https://github.com/agra-uni-bremen/".insteadOf "git@gitlab.informatik.uni-bremen.de:riscv/"
+	$ git clone --recursive https://github.com/agra-uni-bremen/symex-vp
+
+Alternatively, if you already cloned the repository without passing the
+`--recursive` option run the following command to checkout all submodules:
+
 	$ git submodule update --init
 
 ## Installation

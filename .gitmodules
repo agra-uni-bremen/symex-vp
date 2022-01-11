@@ -3,4 +3,4 @@
 	url = https://github.com/orangeduck/mpc
 [submodule "vp/src/clover"]
 	path = vp/src/symex/clover
-	url = git@gitlab.informatik.uni-bremen.de:riscv/clover.git
+	url = https://github.com/agra-uni-bremen/clover.git
