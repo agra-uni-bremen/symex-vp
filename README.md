@@ -5,7 +5,7 @@ A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbo
 ## About
 
 This software allows symbolic execution (or more specifically [concolic
-testing][wikipedia ct]) of RISC-V RV32 machine code. Symbolic variables
+testing][wikipedia ct]) of RISC-V RV32IMC machine code. Symbolic variables
 can be introduced through modeled hardware peripherals. Branches based
 on introduced symbolic values are tracked and as soon as execution
 terminates new assignments for symbolic variables are determined by
