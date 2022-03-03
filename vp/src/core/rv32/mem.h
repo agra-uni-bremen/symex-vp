@@ -198,6 +198,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		auto vaddr = v2p(caddr, STORE);
 
 		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
+		atomic_unlock();
 	}
 
 	Concolic symbolic_load_data(Concolic addr, size_t num_bytes) override {
@@ -328,11 +329,8 @@ virtual Concolic atomic_load_word(Concolic addr) override {
 		if (bus_lock->is_locked(iss.get_hart_id())) {
 			if (addr == lr_addr) {
 				store_word(addr, value);
-				lr_addr = 0; //TODO: is this correct? some risc-v isa tests expect this behavior / 8.2 Regardless of sucessor failure, SC invalidates any reservations 
-				atomic_unlock();
 				return true;
 			}
-			lr_addr = 0; 
 			atomic_unlock();
 		}
 		return false;
