@@ -69,21 +69,27 @@ dump_input(std::string fn)
 static void
 report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& actions)
 {
+	auto nactions = actions;
 	auto mtype = report.get_msg_type();
-	if (strcmp(mtype, "/AGRA/riscv-vp/host-error") || !testcase_path) {
-		sc_core::sc_report_handler::default_handler(report, actions);
-		return;
+
+	if (!strcmp(mtype, "/AGRA/riscv-vp/host-error") || !testcase_path) {
+		auto path = dump_input("error" + std::to_string(++errors_found));
+		if (!path.has_value())
+			return;
+
+		std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
+		if (getenv(ERR_EXIT_ENV)) {
+			std::cerr << "Exit on first error set, terminating..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		nactions &= ~sc_core::SC_DISPLAY; // Prevent SystemC output
+		nactions &= sc_core::SC_STOP;     // Stop SystemC simulation
 	}
 
-	auto path = dump_input("error" + std::to_string(++errors_found));
-	if (!path.has_value())
-		return;
-
-	std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
-	if (getenv(ERR_EXIT_ENV)) {
-		std::cerr << "Exit on first error set, terminating..." << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	// Invoke default handler, even for host-error, to ensure that
+	// SC_REPORT_ERROR is handled properly (i.e. execution is stopped).
+	sc_core::sc_report_handler::default_handler(report, nactions);
 }
 
 static void
