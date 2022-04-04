@@ -1,4 +1,4 @@
-# symex-vp
+# SymEx-VP
 
 A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
 
@@ -60,10 +60,10 @@ Executable binaries are available in `/home/riscv-vp/riscv-vp/vp/build/bin`.
 
 ## Usage
 
-In regards to using `symex-vp` for software execution it behaves like a
+In regards to using SymEx-VP for software execution it behaves like a
 normal virtual prototype and should be able to execute any `RV32IMC`
 binaries. In order to utilize the symbolic execution features provided
-by `symex-vp`, the following additional aspects have to be consider for
+by SymEx-VP, the following additional aspects have to be consider for
 software testing. Communication between software and the virtual
 prototype is achieved through memory-mapped IO with a provided
 `SymbolicCTRL` peripheral.
@@ -78,7 +78,7 @@ prototype is achieved through memory-mapped IO with a provided
    paths through the network stack of the executed software.
    Alternatively, it is also possible to declare variables as symbolic
    manually through the aforementioned `SymbolicCTRL` peripheral.
-2. **Termination Points:** Since `symex-vp` restarts the entire SystemC
+2. **Termination Points:** Since SymEx-VP restarts the entire SystemC
    simulation for each new assignment of symbolic input variables,
    termination points need to be defined for the simulated software. For
    example, when exploring the network stack of the executed software,
@@ -101,7 +101,7 @@ prototype is achieved through memory-mapped IO with a provided
 Usage examples which demonstrate the three aspects mentioned in the
 previous section can be found in the `./examples` subdirectory. For
 instance, the `./examples/zig-out-of-bounds` demonstrates the discovery
-of out-of-bounds array accesses using `symex-vp`. More information on
+of out-of-bounds array accesses using SymEx-VP. More information on
 individual example applications is available in the `README.md` file in
 the `./examples` subdirectory.
 
@@ -137,7 +137,7 @@ The following environment variables can be set:
 
 ## How To Cite
 
-The concepts behind `symex-vp` are further described in the following
+The concepts behind SymEx-VP are further described in the following
 [publication][symex-vp paper] which was published as part of the
 [DATE 2021][date conference] proceedings:
 
