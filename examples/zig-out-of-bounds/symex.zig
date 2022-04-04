@@ -7,16 +7,22 @@ const SYMEX_EXIT:  u32 = 1 << 30;
 
 pub const SymEx = struct {
     pub fn exit(self: SymEx) void {
+        _ = self; // unused function parameter
+
         const ptr = @intToPtr(*volatile u32, SYMEX_CTRL_CTRL);
         ptr.* = SYMEX_EXIT;
     }
 
     pub fn panic(self: SymEx) void {
+        _ = self; // unused function parameter
+
         const ptr = @intToPtr(*volatile u32, SYMEX_CTRL_CTRL);
         ptr.* = SYMEX_ERROR;
     }
 
     pub fn make_symbolic(self: SymEx, addr: usize, size: u32) void {
+        _ = self; // unused function parameter
+
         const aptr = @intToPtr(*volatile u32, SYMEX_CTRL_ADDR);
         const sptr = @intToPtr(*volatile u32, SYMEX_CTRL_SIZE);
 

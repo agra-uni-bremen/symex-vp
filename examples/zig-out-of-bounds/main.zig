@@ -11,6 +11,10 @@ export fn exit() void {
 
 // Custom panic handler for zig panics.
 pub fn panic(msg: []const u8, error_return_trace: ?*StackTrace) noreturn {
+    // unused function parameters.
+    _ = msg;
+    _ = error_return_trace;
+
     CTRL.panic();
 
     // Make sure this function never returns

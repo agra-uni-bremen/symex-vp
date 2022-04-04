@@ -89,6 +89,12 @@ struct data_memory_if {
 	virtual void store_half(Concolic addr, Concolic value) = 0;
 	virtual void store_byte(Concolic addr, Concolic value) = 0;
 
+	virtual Concolic atomic_load_word(Concolic addr) = 0;
+	virtual void atomic_store_word(Concolic addr, Concolic value) = 0;
+	virtual Concolic atomic_load_reserved_word(Concolic addr) = 0;
+	virtual bool atomic_store_conditional_word(Concolic addr, Concolic value) = 0;
+	virtual void atomic_unlock() = 0;
+
     virtual void flush_tlb() = 0;
 };
 

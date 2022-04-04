@@ -68,6 +68,7 @@ using namespace rv32;
 #define REG_UINT32_MAX solver.BVC(std::nullopt, (uint32_t)-1)
 #define REG_INT32_MIN solver.BVC(std::nullopt, (uint32_t)REG_MIN)
 #define REG_ZERO solver.BVC(std::nullopt, (uint32_t)0)
+#define REG_ONE solver.BVC(std::nullopt, (uint32_t)1)
 
 const char *regnames[] = {
     "zero (x0)", "ra   (x1)", "sp   (x2)", "gp   (x3)", "tp   (x4)", "t0   (x5)", "t1   (x6)", "t2   (x7)",
@@ -639,7 +640,7 @@ void ISS::exec_step() {
 			if (cond_is_rs2_zero) {
 				regs.write(RD, REG_UINT32_MAX);
 			} else{
-				auto ans = expr_min_rs2_m->select(rs1,rs1->sdiv(rs2));
+				auto ans = expr_min_rs2_m->select(rs1, rs1->sdiv(rs2));
 				regs.write(RD, ans);
 			}
 
@@ -680,7 +681,7 @@ void ISS::exec_step() {
 			if (cond_is_rs2_zero) {
 				regs.write(RD, rs1);
 			} else{
-				auto ans = expr_min_rs2_m->select(REG_ZERO,rs1->srem(rs2));
+				auto ans = expr_min_rs2_m->select(REG_ZERO, rs1->srem(rs2));
 				regs.write(RD, ans);
 			}
 
@@ -705,29 +706,28 @@ void ISS::exec_step() {
 			track_and_trace_branch(cond_is_rs2_zero, expr_zero);
 		} break;
 
-#if 0
-		case Opcode::LR_W: {
+case Opcode::LR_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			uint32_t addr = regs[instr.rs1()];
+			auto addr = regs[RS1];
 			trap_check_addr_alignment<4, true>(addr);
-			regs[instr.rd()] = mem->atomic_load_reserved_word(addr);
+			regs.write(RD, mem->atomic_load_reserved_word(addr));
 			if (lr_sc_counter == 0)
 			    lr_sc_counter = 17;  // this instruction + 16 additional ones, (an over-approximation) to cover the RISC-V forward progress property
 		} break;
 
 		case Opcode::SC_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			uint32_t addr = regs[instr.rs1()];
+			auto addr = regs[RS1];
 			trap_check_addr_alignment<4, false>(addr);
-			uint32_t val = regs[instr.rs2()];
-			regs[instr.rd()] = 1;  // failure by default (in case a trap is thrown)
-			regs[instr.rd()] = mem->atomic_store_conditional_word(addr, val) ? 0 : 1;  // overwrite result (in case no trap is thrown)
+			auto val = regs[RS2];
+			regs.write(RD, REG_ONE); // failure by default (in case a trap is thrown)
+			regs.write(RD, mem->atomic_store_conditional_word(addr, val) ? REG_ZERO : REG_ONE); // overwrite result (in case no trap is thrown)
 			lr_sc_counter = 0;
 		} break;
 
 		case Opcode::AMOSWAP_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) {
+			execute_amo(instr, [](auto a, auto b) {
 				(void)a;
 				return b;
 			});
@@ -735,44 +735,45 @@ void ISS::exec_step() {
 
 		case Opcode::AMOADD_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return a + b; });
+			execute_amo(instr, [](auto a, auto b) { return a->add(b); });
 		} break;
 
 		case Opcode::AMOXOR_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return a ^ b; });
+			execute_amo(instr, [](auto a, auto b) { return a->bxor(b); });
 		} break;
 
 		case Opcode::AMOAND_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return a & b; });
+			execute_amo(instr, [](auto a, auto b) { return a->band(b); });
 		} break;
 
 		case Opcode::AMOOR_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return a | b; });
+			execute_amo(instr, [](auto a, auto b) { return a->bor(b); });
 		} break;
 
 		case Opcode::AMOMIN_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return std::min(a, b); });
+			execute_amo(instr, [](auto a, auto b) { return (a->sge(b))->select(b, a); });
 		} break;
 
 		case Opcode::AMOMINU_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return std::min((uint32_t)a, (uint32_t)b); });
+			execute_amo(instr, [](auto a, auto b) { return (a->uge(b))->select(b, a); });
 		} break;
 
 		case Opcode::AMOMAX_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return std::max(a, b); });
+			execute_amo(instr, [](auto a, auto b) { return (a->sge(b))->select(a, b); });
 		} break;
 
 		case Opcode::AMOMAXU_W: {
             REQUIRE_ISA(A_ISA_EXT);
-			execute_amo(instr, [](int32_t a, int32_t b) { return std::max((uint32_t)a, (uint32_t)b); });
+			execute_amo(instr, [](auto a, auto b) { return (a->uge(b))->select(a, b); });
 		} break;
 
+#if 0
 			// RV32F Extension
 
 		case Opcode::FLW: {

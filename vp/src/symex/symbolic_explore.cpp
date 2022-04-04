@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 /* Debug leaks with valgrind --leak-check=full --undef-value-errors=no
  * Also: Define valgrind here to prevent spurious Z3 memory leaks. */
@@ -46,6 +47,24 @@
 
 static std::filesystem::path *testcase_path = nullptr;
 static size_t errors_found = 0;
+static size_t paths_found = 0;
+
+static std::chrono::duration<double, std::milli> solver_time;
+
+static void
+dump_stats(void)
+{
+	auto stime = std::chrono::duration_cast<std::chrono::seconds>(solver_time);
+
+	std::cout << std::endl << "---" << std::endl;
+	std::cout << "Unique paths found: " << paths_found << std::endl;
+	std::cout << "Solver Time: " << stime.count() << " seconds" << std::endl;
+	// TODO: Also dump instruction branch coverage here.
+	if (errors_found > 0) {
+		std::cout << "Errors found: " << errors_found << std::endl;
+		std::cout << "Testcase directory: " << *testcase_path << std::endl;
+	}
+}
 
 static std::optional<std::string>
 dump_input(std::string fn)
@@ -69,21 +88,38 @@ dump_input(std::string fn)
 static void
 report_handler(const sc_core::sc_report& report, const sc_core::sc_actions& actions)
 {
+	auto nactions = actions;
 	auto mtype = report.get_msg_type();
-	if (strcmp(mtype, "/AGRA/riscv-vp/host-error") || !testcase_path) {
-		sc_core::sc_report_handler::default_handler(report, actions);
-		return;
+
+	if (!strcmp(mtype, "/AGRA/riscv-vp/host-error") || !testcase_path) {
+		auto path = dump_input("error" + std::to_string(++errors_found));
+		if (!path.has_value())
+			return;
+
+		std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
+		if (getenv(ERR_EXIT_ENV)) {
+			std::cerr << "Exit on first error set, terminating..." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		nactions &= ~sc_core::SC_DISPLAY; // Prevent SystemC output
+		nactions &= sc_core::SC_STOP;     // Stop SystemC simulation
 	}
 
-	auto path = dump_input("error" + std::to_string(++errors_found));
-	if (!path.has_value())
-		return;
+	// Invoke default handler, even for host-error, to ensure that
+	// SC_REPORT_ERROR is handled properly (i.e. execution is stopped).
+	sc_core::sc_report_handler::default_handler(report, nactions);
+}
 
-	std::cerr << "Found error, use " << *path << " to reproduce." << std::endl;
-	if (getenv(ERR_EXIT_ENV)) {
-		std::cerr << "Exit on first error set, terminating..." << std::endl;
-		exit(EXIT_FAILURE);
-	}
+static void
+sigalrm_handler(int signum)
+{
+	(void)signum;
+
+	std::cout << "Time budget exceeded, terminating..." << std::endl;
+
+	dump_stats();
+	exit(EXIT_SUCCESS);
 }
 
 static void
@@ -115,6 +151,17 @@ create_testdir(void)
 		throw std::runtime_error("std::atexit failed");
 }
 
+static bool
+setupNewValues(clover::ExecutionContext &ctx, clover::Trace &tracer)
+{
+	auto start = std::chrono::steady_clock::now();
+	auto r = ctx.setupNewValues(tracer);
+	auto end = std::chrono::steady_clock::now();
+
+	solver_time += end - start;
+	return r;
+}
+
 static int
 run_test(const char *path, int argc, char **argv)
 {
@@ -130,33 +177,15 @@ run_test(const char *path, int argc, char **argv)
 	return sc_core::sc_elab_and_sim(argc, argv);
 }
 
-static size_t
+static int
 explore_paths(int argc, char **argv)
 {
 	clover::ExecutionContext &ctx = symbolic_context.ctx;
 	clover::Trace &tracer = symbolic_context.trace;
 
-	typedef std::chrono::high_resolution_clock::time_point time_point;
-	std::optional<time_point> budget;
-
-	char *timebudget = getenv(TIMEBUDGET_ENV);
-	if (timebudget) {
-		budget = std::chrono::high_resolution_clock::now() +
-			std::chrono::seconds(std::atoi(timebudget));
-	}
-
-	size_t paths_found = 0;
 	do {
-		if (budget.has_value()) {
-			time_point now = std::chrono::high_resolution_clock::now();
-			if (now >= budget) {
-				std::cout << "Time budget exceeded, terminating..." << std::endl;
-				break;
-			}
-		}
-
 		std::cout << std::endl << "##" << std::endl << "# "
-			<< ++paths_found << "th concolic execution" << std::endl
+			<< paths_found + 1 << "th concolic execution" << std::endl
 			<< "##" << std::endl;
 
 		tracer.reset();
@@ -172,12 +201,40 @@ explore_paths(int argc, char **argv)
 		int ret;
 		if ((ret = sc_core::sc_elab_and_sim(argc, argv)))
 			return ret;
-	} while (ctx.setupNewValues(tracer));
+
+		++paths_found;
+	} while (setupNewValues(ctx, tracer));
 
 	sc_core::sc_report_handler::release();
 	delete sc_core::sc_curr_simcontext;
 
-	return paths_found;
+	return 0;
+}
+
+static void
+setup_timeout(void)
+{
+	struct sigaction sa;
+
+	char *timebudget = getenv(TIMEBUDGET_ENV);
+	if (!timebudget)
+		return;
+
+	errno = 0;
+	auto seconds = strtoul(timebudget, NULL, 10);
+	if (!seconds && errno)
+		throw std::system_error(errno, std::generic_category());
+
+	sa.sa_flags = SA_RESTART;
+	sa.sa_handler = sigalrm_handler;
+	if (sigemptyset(&sa.sa_mask) == -1)
+		throw std::system_error(errno, std::generic_category());
+	if (sigaction(SIGALRM, &sa, NULL) == -1)
+		throw std::system_error(errno, std::generic_category());
+
+	int r = alarm(seconds);
+	assert(r == 0);
+	(void)r;
 }
 
 int
@@ -200,20 +257,15 @@ symbolic_explore(int argc, char **argv)
 	// Set report handler for detecting errors
 	sc_core::sc_report_handler::set_handler(report_handler);
 
-	size_t paths_found = explore_paths(argc, argv);
-
-	std::cout << std::endl << "---" << std::endl;
-	std::cout << "Unique paths found: " << paths_found << std::endl;
-	if (errors_found > 0) {
-		std::cout << "Errors found: " << errors_found << std::endl;
-		std::cout << "Testcase directory: " << *testcase_path << std::endl;
-	}
+	setup_timeout();
+	int ret = explore_paths(argc, argv);
+	dump_stats();
 
 #ifdef VALGRIND
 	Z3_finalize_memory();
 #endif
 
-	return 0;
+	return ret;
 }
 
 #endif

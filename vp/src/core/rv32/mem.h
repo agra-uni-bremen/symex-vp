@@ -68,7 +68,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
                                  public mmu_memory_if  {
 	ISS &iss;
 	std::shared_ptr<bus_lock_if> bus_lock;
-	uint64_t lr_addr = 0;
+	Concolic lr_addr = 0;
 
 	tlm_utils::simple_initiator_socket<CombinedMemoryInterface> isock;
 	tlm_utils::tlm_quantumkeeper &quantum_keeper;
@@ -187,9 +187,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 
 		if (!done)
 			_do_transaction(tlm::TLM_WRITE_COMMAND, addr, (uint8_t *)&value, sizeof(T));
-#if 0
 		atomic_unlock();
-#endif
 	}
 
 	void symbolic_store_data(Concolic addr, Concolic data, size_t num_bytes) override {
@@ -200,6 +198,7 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		auto vaddr = v2p(caddr, STORE);
 
 		_do_transaction(tlm::TLM_WRITE_COMMAND, vaddr, data, num_bytes);
+		atomic_unlock();
 	}
 
 	Concolic symbolic_load_data(Concolic addr, size_t num_bytes) override {
@@ -310,21 +309,20 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 		symbolic_store_data(addr, value, sizeof(uint8_t));
 	}
 
-#if 0
-	virtual int32_t atomic_load_word(uint64_t addr) override {
+virtual Concolic atomic_load_word(Concolic addr) override {
 		bus_lock->lock(iss.get_hart_id());
 		return load_word(addr);
 	}
-	virtual void atomic_store_word(uint64_t addr, uint32_t value) override {
+	virtual void atomic_store_word(Concolic addr, Concolic value) override {
 		assert(bus_lock->is_locked(iss.get_hart_id()));
 		store_word(addr, value);
 	}
-	virtual int32_t atomic_load_reserved_word(uint64_t addr) override {
+	virtual Concolic atomic_load_reserved_word(Concolic addr) override {
 		bus_lock->lock(iss.get_hart_id());
 		lr_addr = addr;
 		return load_word(addr);
 	}
-	virtual bool atomic_store_conditional_word(uint64_t addr, uint32_t value) override {
+	virtual bool atomic_store_conditional_word(Concolic addr, Concolic value) override {
 		/* According to the RISC-V ISA, an implementation can fail each LR/SC sequence that does not satisfy the forward
 		 * progress semantic.
 		 * The lock is established by the LR instruction and the lock is kept while forward progress is maintained. */
@@ -340,7 +338,6 @@ struct CombinedMemoryInterface : public sc_core::sc_module,
 	virtual void atomic_unlock() override {
 		bus_lock->unlock(iss.get_hart_id());
 	}
-#endif
 };
 
 }  // namespace rv32
