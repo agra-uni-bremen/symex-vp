@@ -1,7 +1,7 @@
 FROM alpine:edge
 
 RUN apk update && apk add --no-cache -X "https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
-	build-base cmake boost-dev z3-dev llvm12-dev git gcc-riscv-none-elf newlib-riscv-none-elf
+	build-base cmake boost-dev z3-dev llvm13-dev git gcc-riscv-none-elf newlib-riscv-none-elf
 RUN adduser -G users -g 'RISC-V VP User' -D riscv-vp
 ADD --chown=riscv-vp:users . /home/riscv-vp/riscv-vp
 RUN su - riscv-vp -c 'make -C /home/riscv-vp/riscv-vp'
