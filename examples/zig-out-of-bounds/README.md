@@ -10,7 +10,7 @@ since it operates on the machine code level.
 In this example, `symex-vp` is able to detect an out-of-bounds array
 access due to an off-by-one in the performed bounds check. Zig is
 presently not a ready for production use, this example application is
-known to compile with Zig `0.8.1`.
+known to compile with Zig `0.9.1`.
 
 ## Usage
 
