@@ -137,6 +137,12 @@ of out-of-bounds array accesses using SymEx-VP. More information on
 individual example applications is available in the `README.md` file in
 the `./examples` subdirectory.
 
+The provided Docker image already contains a correctly configured RISC-V
+cross toolchain. For example, to run the `assertion-failure` example
+simply execute the following command inside the container:
+
+	$ make -C examples/assertion-failure/ sim
+
 ## Provided VPs
 
 The following virtual prototypes are available:
