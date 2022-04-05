@@ -1,20 +1,44 @@
 # SymEx-VP
 
-A RISC-V RV32 virtual prototype based on [riscv-vp][riscv-vp github] with [symbolic execution][wikipedia symex] support.
+A [concolic testing][wikipedia ct] framework for RISC-V embedded software with support for [SystemC][systemc website] peripheral models.
 
 ## About
 
-This software allows symbolic execution (or more specifically [concolic
-testing][wikipedia ct]) of RISC-V RV32IMC machine code. Symbolic variables
-can be introduced through modeled hardware peripherals. Branches based
-on introduced symbolic values are tracked and as soon as execution
-terminates new assignments for symbolic variables are determined by
-negating encountered branch conditions (Dynamic Symbolic Execution). For
-each new assignment, the software [simulation is restarted][systemc restart]
-from the beginning, thereby (ideally) enabling exploration of all paths
-through the program based on the introduced symbolic variables.
-Presently, address concretization is utilized as a memory model, thus
-the analysis is sound but not complete.
+SymEx-VP focuses explicitly on testing software for constrained embedded
+devices (e.g. as used in the Internet of Things). This software often
+interacts very closely with low-level hardware peripherals and in order
+to support these interactions, during simulation-based software testing,
+SymEx-VP supports [SystemC][systemc website] peripheral models. SystemC
+is a C++ class library for modeling hardware peripherals. SystemC is
+often used to create executable models of an entire hardware platform,
+so-called Virtual Prototypes (VPs). Using these SystemC peripherals
+models, SymEx-VP allows injecting test inputs into the software
+simulation via the [MMIO][wikipedia mmio] peripheral interface. Thereby
+allowing tests of embedded software with only minimal software
+modifications.
+
+Based on injected inputs, SymEx-VP allows [symbolic execution][wikipedia
+symex] (or more specifically [concolic testing][wikipedia ct]) of RISC-V
+RV32IMAC machine code. Branches based on injected symbolic values are
+tracked and as soon as execution terminates new assignments for symbolic
+variables are determined by negating encountered branch conditions
+(Dynamic Symbolic Execution). For each new assignment, the software
+[simulation is restarted][systemc restart] from the beginning, thereby
+(ideally) enabling exploration of all paths through the program based on
+the introduced symbolic variables.
+
+SymEx-VP is implemented on top of the existing [riscv-vp][riscv-vp github]
+codebase and integrates this existing VP with the [clover][clover github]
+concolic testing library. More details on SymEx-VP are provided in the
+[SymEx-VP paper][symex-vp paper].
+
+## Features
+
+* Concolic execution of RISC-V RV32IMAC machine code
+* Accurate hardware peripheral modeling via the SystemC C++ library
+* Support for injecting concolic test inputs via the MMIO peripheral interface
+* Integrated [GDB][gdb website] stub to ease debugging of encountered errors
+* Support for many embedded operating systems (e.g. [RIOT][riot website], [Zephyr][zephyr website], …)
 
 ## Cloning
 
@@ -31,7 +55,28 @@ Alternatively, if you already cloned the repository without passing the
 
 ## Installation
 
-This software has the following dependencies:
+This software can be installed either using [Docker][docker website]
+(recommended) or manually via [GNU make][make website].
+
+### Docker
+
+To build a Docker image for SymEx-VP run the following command:
+
+	$ docker build -t riscv-symex .
+
+Afterwards, create a new Docker container from this image using:
+
+	$ docker run --rm -it riscv-symex
+
+The SymEx-VP source directory is then available in
+`/home/riscv-vp/riscv-vp` within the container. Provided VPs are
+automatically added to `$PATH`. For this reason, the examples provided
+in `/home/riscv-vp/riscv-vp/examples` (see below) can easily be executed
+within the provided container.
+
+### Manual
+
+Manual installation requires the following software to be installed:
 
 * A C++ compiler toolchain with C++17 support
 * [CMake][cmake website]
@@ -45,23 +90,10 @@ After all dependencies have been installed run:
 
 Executable binaries are then available in `./vp/build/bin`.
 
-## Dockerfile
-
-To ease installation a `Dockerfile` is provided. To build a docker
-image from this provided `Dockerfile` use the following command:
-
-	$ docker build -t riscv-symex .
-
-Afterwards, run the docker image using:
-
-	$ docker run --rm -it riscv-symex
-
-Executable binaries are available in `/home/riscv-vp/riscv-vp/vp/build/bin`.
-
 ## Usage
 
 In regards to using SymEx-VP for software execution it behaves like a
-normal virtual prototype and should be able to execute any `RV32IMC`
+normal virtual prototype and should be able to execute any RV32IMAC
 binaries. In order to utilize the symbolic execution features provided
 by SymEx-VP, the following additional aspects have to be consider for
 software testing. Communication between software and the virtual
@@ -126,11 +158,13 @@ The following virtual prototypes are available:
 The following environment variables can be set:
 
 * **SYMEX_ERREXIT:** If set, terminate after encountering the first
-  error (see below) during symbolic execution of the software.
+  error during symbolic execution of the software.
 * **SYMEX_TIMEOUT:** This can be used to configure the solver timeout
-  of the employed SMT solver, by default no timeout is used.
-* **SYMEX_TIMEBUDGET:** Time budget for path exploration, by default the
-  software is explored until all branches have been negated.
+  of the employed SMT solver, by default no timeout is used. The
+  timeout is given in seconds.
+* **SYMEX_TIMEBUDGET:** Time budget (in seconds) for path exploration,
+  by default the software is explored until all branches have been
+  negated.
 * **SYMEX_TESTCASE:** This environment variable can point to a test case
   file for replaying inputs causing an error. This is most useful in
   conjunction with `--debug-mode`.
@@ -165,17 +199,22 @@ riscv-vp are licensed under GPLv3+ (see `LICENSE.GPL`). Consult the
 copyright headers of individual files for more information.
 
 [riscv-vp github]: https://github.com/agra-uni-bremen/riscv-vp
+[clover github]: https://github.com/agra-uni-bremen/clover
 [wikipedia symex]: https://en.wikipedia.org/wiki/Symbolic_execution
 [wikipedia ct]: https://en.wikipedia.org/wiki/Concolic_testing
+[wikipedia mmio]: https://en.wikipedia.org/wiki/Memory-mapped_I/O
+[systemc website]: https://systemc.org/
+[gdb website]: https://www.gnu.org/software/gdb/
+[docker website]: https://www.docker.io/
+[make website]: https://www.gnu.org/software/make
 [z3 repo]: https://github.com/Z3Prover/z3
 [llvm website]: https://llvm.org/
 [cmake website]: https://cmake.org/
 [boost website]: https://www.boost.org/
 [sifive hifive1]: https://www.sifive.com/boards/hifive1
 [riot website]: https://riot-os.org/
-[zephyr website]: https://riot-os.org/
+[zephyr website]: https://zephyrproject.org/
 [riscv-compliance github]: https://github.com/riscv/riscv-compliance/
-[date conference]: https://www.date-conference.com/
 [symex-vp paper]: https://doi.org/10.1016/j.sysarc.2022.102456
 [systemc restart]: https://github.com/accellera-official/systemc/issues/8
 [dac checkedc]: https://www.informatik.uni-bremen.de/agra/doc/konf/DAC-2021-CheckedC-Concolic-Testing.pdf
