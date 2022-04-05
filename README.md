@@ -1,6 +1,6 @@
 # SymEx-VP
 
-A [concolic testing][wikipedia ct] framework for RISC-V embedded software with support for [SystemC][systemc website] peripheral models.
+A [concolic testing][wikipedia ct] framework for RISC-V embedded software with support for [SystemC][systemc website] peripherals.
 
 ## About
 
