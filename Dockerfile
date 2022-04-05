@@ -5,4 +5,5 @@ RUN apk update && apk add --no-cache -X "https://dl-cdn.alpinelinux.org/alpine/e
 RUN adduser -G users -g 'RISC-V VP User' -D riscv-vp
 ADD --chown=riscv-vp:users . /home/riscv-vp/riscv-vp
 RUN su - riscv-vp -c 'make -C /home/riscv-vp/riscv-vp'
-CMD su - riscv-vp
+RUN su - riscv-vp -c "echo PATH=\"$PATH:/home/riscv-vp/riscv-vp/vp/build/bin\" >> /home/riscv-vp/.profile"
+CMD su -l - riscv-vp
