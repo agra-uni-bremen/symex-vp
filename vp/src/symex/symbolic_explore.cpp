@@ -41,6 +41,8 @@
 #include "symbolic_explore.h"
 #include "symbolic_context.h"
 
+#include "rawmode.h"
+
 #define TESTCASE_ENV "SYMEX_TESTCASE"
 #define TIMEBUDGET_ENV "SYMEX_TIMEBUDGET"
 #define ERR_EXIT_ENV "SYMEX_ERREXIT"
@@ -117,9 +119,10 @@ sigalrm_handler(int signum)
 	(void)signum;
 
 	std::cout << "Time budget exceeded, terminating..." << std::endl;
-
 	dump_stats();
-	exit(EXIT_SUCCESS);
+
+	disableRawMode(STDIN_FILENO); // _Exit doesn't run atexit functions
+	std::_Exit(EXIT_SUCCESS);     // Don't run deconstructors
 }
 
 static void
