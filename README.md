@@ -37,7 +37,8 @@ concolic testing library. More details on SymEx-VP are provided in the
 * Concolic execution of RISC-V RV32IMAC machine code
 * Accurate hardware peripheral modeling via the SystemC C++ library
 * Support for injecting concolic test inputs via the MMIO peripheral interface
-* Integrated [GDB][gdb website] stub to ease debugging of encountered errors
+* Support for generating test case files and replaying them (see `SYMEX_TESTCASE` below)
+* Integrated [GDB][gdb website] stub to ease debugging of encountered errors (`--debug-mode`)
 * Support for many embedded operating systems (e.g. [RIOT][riot website], [Zephyr][zephyr website], …)
 
 ## Cloning
@@ -143,6 +144,11 @@ simply execute the following command inside the container:
 
 	$ make -C examples/assertion-failure/ sim
 
+More complex usage example, e.g. for the integration with embedded
+operating systems, are provided as part of the
+[evaluation artifacts][symex-vp artifacts] for the SymEx-VP overview
+paper.
+
 ## Provided VPs
 
 The following virtual prototypes are available:
@@ -153,7 +159,7 @@ The following virtual prototypes are available:
 * `hifive-vp`: A virtual prototype mostly compatible with the
   [SiFive HiFive1][sifive hifive1]. This allows executing software
   for embedded operating systems like [RIOT][riot website] or
-  [zephyr][zephyr website] symbolically.
+  [Zephyr][zephyr website] symbolically.
 * `test32-vp`: This virtual prototype is intended to be used with
   the [riscv-compliance][riscv-compliance github] repository. This is
   primarily useful for development (e.g. during testing of new
@@ -177,8 +183,7 @@ The following environment variables can be set:
 
 ## How To Cite
 
-The concepts behind SymEx-VP are further described in the following
-[publication][symex-vp paper] in the Journal of Systems Architecture:
+The concepts behind SymEx-VP are further described in the following [publication][symex-vp paper]:
 
 	@inproceedings{tempel2022symex,
 		title   = {{SymEx-VP: An open source virtual prototype for OS-agnostic concolic testing of IoT firmware}},
@@ -189,6 +194,8 @@ The concepts behind SymEx-VP are further described in the following
 		doi     = {10.1016/j.sysarc.2022.102456},
 		author  = {Sören Tempel and Vladimir Herdt and Rolf Drechsler},
 	}
+
+The artifacts for this publication are also available on [Code Ocean][symex-vp artifacts].
 
 ## Acknowledgements
 
@@ -222,6 +229,7 @@ copyright headers of individual files for more information.
 [zephyr website]: https://zephyrproject.org/
 [riscv-compliance github]: https://github.com/riscv/riscv-compliance/
 [symex-vp paper]: https://doi.org/10.1016/j.sysarc.2022.102456
+[symex-vp artifacts]: https://doi.org/10.24433/CO.7255660.v1
 [systemc restart]: https://github.com/accellera-official/systemc/issues/8
 [dac checkedc]: https://www.informatik.uni-bremen.de/agra/doc/konf/DAC-2021-CheckedC-Concolic-Testing.pdf
 [fdl stack]: https://www.informatik.uni-bremen.de/agra/doc/konf/FDL21_VP_Stacksize.pdf
