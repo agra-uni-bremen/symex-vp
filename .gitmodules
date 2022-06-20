@@ -1,6 +1,6 @@
 [submodule "vp/src/core/common/gdb-mc/parser/mpc"]
 	path = vp/src/core/common/gdb-mc/libgdb/mpc
 	url = https://github.com/orangeduck/mpc
-[submodule "vp/src/clover"]
+[submodule "vp/src/symex/clover"]
 	path = vp/src/symex/clover
 	url = https://github.com/agra-uni-bremen/clover.git
