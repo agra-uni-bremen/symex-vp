@@ -185,7 +185,7 @@ The following environment variables can be set:
 
 The concepts behind SymEx-VP are further described in the following [publication][symex-vp paper]:
 
-	@inproceedings{tempel2022symex,
+	@article{tempel2022symex,
 		title   = {{SymEx-VP: An open source virtual prototype for OS-agnostic concolic testing of IoT firmware}},
 		journal = {Journal of Systems Architecture},
 		pages   = {102456},
