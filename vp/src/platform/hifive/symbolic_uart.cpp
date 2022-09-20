@@ -66,9 +66,8 @@ SymbolicUART::SymbolicUART(sc_core::sc_module_name, uint32_t irqsrc, SymbolicCon
 	irq = irqsrc;
 	tsock.register_b_transport(this, &SymbolicUART::transport);
 
-	std::shared_ptr<clover::ConcolicValue> v;
-	while ((v = fmt.next_byte()))
-		rx_fifo.push(v);
+	for (auto byte : fmt.get_bytes())
+		rx_fifo.push(byte);
 
 	router
 	    .add_register_bank({

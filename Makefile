@@ -12,6 +12,9 @@ vp/dependencies/softfloat-dist:
 vp/src/core/common/gdb-mc/libgdb/mpc/mpc.c:
 	git submodule update --init vp/src/core/common/gdb-mc/libgdb/mpc
 
+vp/src/symex/bencode/README.md:
+	git submodule update --init vp/src/symex/bencode
+
 vp/src/symex/clover/README.md:
 	git submodule update --init vp/src/symex/clover
 

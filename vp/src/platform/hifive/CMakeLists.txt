@@ -4,7 +4,6 @@ add_executable(hifive-vp
         oled.cpp
         gpio.cpp
         symbolic_uart.cpp
-        symbolic_format.cpp
         gpio/gpiocommon.cpp
         gpio/gpio-server.cpp
         gpio/gpio-client.cpp

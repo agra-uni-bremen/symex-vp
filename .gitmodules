@@ -4,3 +4,6 @@
 [submodule "vp/src/symex/clover"]
 	path = vp/src/symex/clover
 	url = https://github.com/agra-uni-bremen/clover.git
+[submodule "vp/src/symex/bencode"]
+	path = vp/src/symex/bencode
+	url = https://github.com/jimporter/bencode.hpp
