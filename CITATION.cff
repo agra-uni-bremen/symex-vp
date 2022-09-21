@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: SymEx-VP - A concolic testing framework for RISC-V embedded software
+url: https://github.com/agra-uni-bremen/symex-vp
+preferred-citation:
+  type: article
+  scope: "If you use this software, we prefer that you cite our paper as below."
+  authors:
+    - family-names: Tempel
+      given-names: Sören
+      orcid: https://orcid.org/0000-0002-3076-893X
+    - family-names: Vladimir
+      given-names: Herdt
+      orcid: https://orcid.org/0000-0002-4481-057X
+    - family-names: Rolf
+      given-names: Drechsler
+      orcid: https://orcid.org/0000-0002-9872-1740
+  title: "SymEx-VP: An open source virtual prototype for OS-agnostic concolic testing of IoT firmware"
+  journal: Journal of Systems Architecture
+  publisher:
+    - name: Elsevier
+  month: 5
+  year: 2022
+  volume: 126
+  issue: 1
+  pages: 12
+  issn: "1383-7621"
+  doi: 10.1016/j.sysarc.2022.102456
