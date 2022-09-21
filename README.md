@@ -188,7 +188,7 @@ The concepts behind SymEx-VP are further described in the following [publication
 	@article{tempel2022symex,
 		title   = {{SymEx-VP: An open source virtual prototype for OS-agnostic concolic testing of IoT firmware}},
 		journal = {Journal of Systems Architecture},
-		pages   = {102456},
+		pages   = {12},
 		year    = {2022},
 		issn    = {1383-7621},
 		doi     = {10.1016/j.sysarc.2022.102456},
