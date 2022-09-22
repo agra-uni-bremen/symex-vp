@@ -180,6 +180,9 @@ The following environment variables can be set:
 * **SYMEX_TESTCASE:** This environment variable can point to a test case
   file for replaying inputs causing an error. This is most useful in
   conjunction with `--debug-mode`.
+* **SYMEX_DUMPALL:** Create test case files for all generated paths, by
+  default test case files are only generated for paths with an error
+  condition.
 
 ## How To Cite
 

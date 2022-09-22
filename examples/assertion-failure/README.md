@@ -41,7 +41,7 @@ In order to debug the error condition we can reply
 the input which triggers this error and debug it further using the GDB
 stub provided by `symex-vp` using:
 
-	$ SYMEX_TESTCASE=/tmp/clover_testseIFaOe/error1 symex-vp --debug-mode main
+	$ SYMEX_TESTCASE=/tmp/clover_testseIFaOe/path3_error symex-vp --debug-mode main
 
 In a separate terminal window we can then connect to the started GDB
 server using a gdb version with RISC-V support (gdb-multiarch in this
