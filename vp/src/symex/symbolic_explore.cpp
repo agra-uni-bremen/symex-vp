@@ -50,8 +50,8 @@
 
 static bool dump_all = false;
 static std::filesystem::path *testcase_path = nullptr;
-static size_t errors_found = 0;
-static size_t paths_found = 0;
+static unsigned errors_found = 0;
+static unsigned long paths_found = 0;
 
 static std::chrono::duration<double, std::milli> solver_time;
 
