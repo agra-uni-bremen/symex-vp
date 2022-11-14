@@ -1,7 +1,7 @@
 FROM alpine:edge
 
 RUN apk update && apk add --no-cache build-base cmake boost-dev z3-dev \
-	llvm13-dev git gcc-riscv-none-elf newlib-riscv-none-elf
+	llvm15-dev git gcc-riscv-none-elf newlib-riscv-none-elf
 
 # Examples expect riscv32-unknown-* compiler triplet.
 # TODO: Find a better way to deal with this problem.
