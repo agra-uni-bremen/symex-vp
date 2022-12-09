@@ -147,7 +147,9 @@ simply execute the following command inside the container:
 More complex usage example, e.g. for the integration with embedded
 operating systems, are provided as part of the
 [evaluation artifacts][symex-vp artifacts] for the SymEx-VP overview
-paper.
+paper. Furthermore, simple test harnesses for using SymEx-VP in
+conjunction with the RIOT operating systems are provided in the
+[symex-vp-riot repository][symex-vp-riot github].
 
 ## Provided VPs
 
@@ -236,3 +238,4 @@ copyright headers of individual files for more information.
 [systemc restart]: https://github.com/accellera-official/systemc/issues/8
 [dac checkedc]: https://www.informatik.uni-bremen.de/agra/doc/konf/DAC-2021-CheckedC-Concolic-Testing.pdf
 [fdl stack]: https://www.informatik.uni-bremen.de/agra/doc/konf/FDL21_VP_Stacksize.pdf
+[symex-vp-riot github]: https://github.com/agra-uni-bremen/symex-vp-riot
