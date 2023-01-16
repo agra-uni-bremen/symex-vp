@@ -4,18 +4,18 @@ A [concolic testing][wikipedia ct] framework for RISC-V embedded software with s
 
 ## About
 
-SymEx-VP focuses explicitly on testing software for constrained embedded
-devices (e.g. as used in the Internet of Things). This software often
-interacts very closely with low-level hardware peripherals and in order
-to support these interactions, during simulation-based software testing,
-SymEx-VP supports [SystemC][systemc website] peripheral models. SystemC
-is a C++ class library for modeling hardware peripherals. SystemC is
-often used to create executable models of an entire hardware platform,
-so-called Virtual Prototypes (VPs). Using these SystemC peripherals
-models, SymEx-VP allows injecting test inputs into the software
-simulation via the [MMIO][wikipedia mmio] peripheral interface. Thereby
-allowing tests of embedded software with only minimal software
-modifications.
+SymEx-VP focuses explicitly on testing software for
+[constrained embedded devices][rfc7228] (e.g. as used in the Internet of
+Things). This software often interacts very closely with low-level
+hardware peripherals and in order to support these interactions, during
+simulation-based software testing, SymEx-VP supports [SystemC][systemc
+website] peripheral models. SystemC is a C++ class library for modeling
+hardware peripherals. SystemC is often used to create executable models
+of an entire hardware platform, so-called Virtual Prototypes (VPs).
+Using these SystemC peripherals models, SymEx-VP allows injecting test
+inputs into the software simulation via the [MMIO][wikipedia mmio]
+peripheral interface. Thereby allowing tests of embedded software with
+only minimal software modifications.
 
 Based on injected inputs, SymEx-VP allows [symbolic execution][wikipedia
 symex] (or more specifically [concolic testing][wikipedia ct]) of RISC-V
@@ -216,6 +216,7 @@ All modifications made for the integration of symbolic execution with
 riscv-vp are licensed under GPLv3+ (see `LICENSE.GPL`). Consult the
 copyright headers of individual files for more information.
 
+[rfc7228]: https://www.rfc-editor.org/rfc/rfc7228
 [riscv-vp github]: https://github.com/agra-uni-bremen/riscv-vp
 [clover github]: https://github.com/agra-uni-bremen/clover
 [wikipedia symex]: https://en.wikipedia.org/wiki/Symbolic_execution
