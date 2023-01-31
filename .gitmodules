@@ -7,3 +7,6 @@
 [submodule "vp/src/symex/bencode"]
 	path = vp/src/symex/bencode
 	url = https://github.com/jimporter/bencode.hpp
+[submodule "vp/src/vendor/systemc"]
+	path = vp/src/vendor/systemc
+	url = https://github.com/agra-uni-bremen/systemc.git

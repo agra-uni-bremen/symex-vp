@@ -6,6 +6,6 @@ add_executable(symex-vp
         ${HEADERS})
 
 target_link_libraries(symex-vp rv32 platform-common gdb-mc
-	${Boost_LIBRARIES} ${SystemC_LIBRARIES} pthread)
+	${Boost_LIBRARIES} systemc pthread)
 
 INSTALL(TARGETS symex-vp RUNTIME DESTINATION bin)
