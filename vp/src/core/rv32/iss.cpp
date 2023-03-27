@@ -1652,7 +1652,7 @@ std::vector<uint64_t> ISS::get_registers(void) {
     return regvals;
 }
 
-
+#if 0
 void ISS::fp_finish_instr() {
 	fp_set_dirty();
 	fp_update_exception_flags();
@@ -1689,6 +1689,7 @@ void ISS::fp_require_not_off() {
 	if (csrs.mstatus.fs == FS_OFF)
 		RAISE_ILLEGAL_INSTRUCTION();
 }
+#endif
 
 void ISS::return_from_trap_handler(PrivilegeLevel return_mode) {
 	switch (return_mode) {

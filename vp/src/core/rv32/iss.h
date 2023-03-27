@@ -46,7 +46,6 @@
 #include "core/common/trap.h"
 #include "core/common/debug.h"
 #include "csr.h"
-#include "fp.h"
 #include "mem_if.h"
 #include "syscall_if.h"
 #include "symbolic_if.h"
@@ -207,7 +206,6 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	data_memory_if *mem = nullptr;
 	syscall_emulator_if *sys = nullptr;  // optional, if provided, the iss will intercept and handle syscalls directly
 	RegFile regs;
-	FpRegs fp_regs;
 	uint32_t pc = 0;
 	uint32_t last_pc = 0;
 	bool trace = false;
@@ -301,12 +299,14 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 		mem->atomic_unlock();
 	}
 
+#if 0
 	void fp_prepare_instr();
 	void fp_finish_instr();
 	void fp_set_dirty();
 	void fp_update_exception_flags();
 	void fp_setup_rm();
 	void fp_require_not_off();
+#endif
 
 	uint32_t get_csr_value(uint32_t addr);
 	void set_csr_value(uint32_t addr, uint32_t value);

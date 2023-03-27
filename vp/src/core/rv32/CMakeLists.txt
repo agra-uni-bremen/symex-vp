@@ -5,7 +5,7 @@ add_library(rv32
 		syscall.cpp
         ${HEADERS})
 
-target_link_libraries(rv32 systemc symex core-common softfloat)
+target_link_libraries(rv32 systemc symex core-common)
 
 if(COLOR_THEME STREQUAL "LIGHT")
 	message("> using color theme LIGHT")
