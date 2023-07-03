@@ -17,4 +17,7 @@ ADD --chown=riscv-vp . /home/riscv-vp/riscv-vp
 WORKDIR /home/riscv-vp/riscv-vp
 
 RUN make -C /home/riscv-vp/riscv-vp
-RUN sh -c "echo PATH=\"$PATH:/home/riscv-vp/riscv-vp/vp/build/bin\" >> /home/riscv-vp/.profile"
+RUN sh -c "echo export PATH='\$PATH:/home/riscv-vp/riscv-vp/vp/build/bin' >> /home/riscv-vp/.profile"
+
+# Run a login shell to force ash to source ~/.profile
+ENTRYPOINT ["/bin/sh", "-l"]
