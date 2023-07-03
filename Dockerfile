@@ -13,7 +13,7 @@ RUN sh -c 'ln -s $(command -v riscv-none-elf-gcc) /usr/local/bin/riscv32-unknown
 RUN adduser -G users -g 'RISC-V VP User' -D riscv-vp
 USER riscv-vp
 
-ADD --chown=riscv-vp . /home/riscv-vp/riscv-vp
+ADD --chown=riscv-vp:users . /home/riscv-vp/riscv-vp
 WORKDIR /home/riscv-vp/riscv-vp
 
 RUN make -C /home/riscv-vp/riscv-vp
