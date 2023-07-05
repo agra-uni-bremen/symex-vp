@@ -2,7 +2,6 @@ file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 add_library(rv32
 		iss.cpp
-		syscall.cpp
         ${HEADERS})
 
 target_link_libraries(rv32 systemc symex core-common)

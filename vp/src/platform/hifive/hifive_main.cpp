@@ -43,7 +43,6 @@
 #include "aon.h"
 #include "can.h"
 #include "core/common/real_clint.h"
-#include "syscall.h"
 #include "elf_loader.h"
 #include "fe310_plic.h"
 #include "debug_memory.h"
@@ -99,8 +98,6 @@ public:
 	addr_t maskROM_end_addr = 0x00001FFF;
 	addr_t clint_start_addr = 0x02000000;
 	addr_t clint_end_addr = 0x0200FFFF;
-	addr_t sys_start_addr = 0x02010000;
-	addr_t sys_end_addr = 0x020103ff;
 	addr_t sym_start_addr = 0x02020000;
 	addr_t sym_end_addr = 0x02020032;
 	addr_t plic_start_addr = 0x0C000000;
@@ -151,9 +148,8 @@ int sc_main(int argc, char **argv) {
 	SymbolicCTRL symctrl("symctrl", core);
 	SimpleMemory flash("Flash", opt.flash_size);
 	ELFLoader loader(opt.input_program.c_str());
-	SimpleBus<2, 15> bus("SimpleBus");
+	SimpleBus<2, 14> bus("SimpleBus");
 	CombinedMemoryInterface iss_mem_if("MemoryInterface", core);
-	SyscallHandler sys("SyscallHandler");
 
 	std::vector<clint_interrupt_target*> clint_targets {&core};
 
@@ -198,21 +194,15 @@ int sc_main(int argc, char **argv) {
 	bus.ports[7] = new PortMapping(opt.uart0_start_addr, opt.uart0_end_addr);
 	bus.ports[8] = new PortMapping(opt.maskROM_start_addr, opt.maskROM_end_addr);
 	bus.ports[9] = new PortMapping(opt.gpio0_start_addr, opt.gpio0_end_addr);
-	bus.ports[10] = new PortMapping(opt.sys_start_addr, opt.sys_end_addr);
-	bus.ports[11] = new PortMapping(opt.spi1_start_addr, opt.spi1_end_addr);
-	bus.ports[12] = new PortMapping(opt.spi2_start_addr, opt.spi2_end_addr);
-	bus.ports[13] = new PortMapping(opt.uart1_start_addr, opt.uart1_end_addr);
-	bus.ports[14] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
+	bus.ports[10] = new PortMapping(opt.spi1_start_addr, opt.spi1_end_addr);
+	bus.ports[11] = new PortMapping(opt.spi2_start_addr, opt.spi2_end_addr);
+	bus.ports[12] = new PortMapping(opt.uart1_start_addr, opt.uart1_end_addr);
+	bus.ports[13] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
 
 	loader.load_executable_image(flash, flash.size, opt.flash_start_addr, false);
 	loader.load_executable_image(dram, dram.size, opt.dram_start_addr, false);
 
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.dram_end_addr));
-	sys.init(nullptr, 0, loader.get_heap_addr());
-	sys.register_core(&core);
-
-	if (opt.intercept_syscalls)
-		core.sys = &sys;
 
 	// connect TLM sockets
 	iss_mem_if.isock.bind(bus.tsocks[0]);
@@ -227,11 +217,10 @@ int sc_main(int argc, char **argv) {
 	bus.isocks[7].bind(uart0.tsock);
 	bus.isocks[8].bind(maskROM.tsock);
 	bus.isocks[9].bind(gpio0.tsock);
-	bus.isocks[10].bind(sys.tsock);
-	bus.isocks[11].bind(spi1.tsock);
-	bus.isocks[12].bind(spi2.tsock);
-	bus.isocks[13].bind(uart1.tsock);
-	bus.isocks[14].bind(symctrl.tsock);
+	bus.isocks[10].bind(spi1.tsock);
+	bus.isocks[11].bind(spi2.tsock);
+	bus.isocks[12].bind(uart1.tsock);
+	bus.isocks[13].bind(symctrl.tsock);
 
 	// connect interrupt signals/communication
 	plic.target_harts[0] = &core;

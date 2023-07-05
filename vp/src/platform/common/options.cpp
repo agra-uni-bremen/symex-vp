@@ -32,7 +32,6 @@ Options::Options(void) {
 	// clang-format off
 	add_options()
 		("help", "produce help message")
-		("intercept-syscalls", po::bool_switch(&intercept_syscalls), "directly intercept and handle syscalls in the ISS")
 		("debug-mode", po::bool_switch(&use_debug_runner), "start execution in debugger (using gdb rsp interface)")
 		("debug-port", po::value<unsigned int>(&debug_port), "select port number to connect with GDB")
 		("trace-mode", po::bool_switch(&trace_mode), "enable instruction tracing")

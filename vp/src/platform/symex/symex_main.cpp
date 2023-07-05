@@ -51,7 +51,6 @@
 #include "symbolic_explore.h"
 #include "symbolic_ctrl.h"
 #include "symex_sensor.h"
-#include "syscall.h"
 #include "platform/common/options.h"
 
 #include "gdb-mc/gdb_server.h"
@@ -76,8 +75,6 @@ public:
 
 	addr_t clint_start_addr = 0x02000000;
 	addr_t clint_end_addr = 0x0200ffff;
-	addr_t sys_start_addr = 0x02010000;
-	addr_t sys_end_addr = 0x020103ff;
 	addr_t sym_start_addr = 0x02020000;
 	addr_t sym_end_addr = 0x02020032;
 	addr_t sensor_start_addr = 0x02020100;
@@ -107,8 +104,7 @@ int sc_main(int argc, char **argv) {
 	SymbolicSensor sensor("sensor", symbolic_context);
 	SymbolicCTRL symctrl("symctrl", core);
 	ELFLoader loader(opt.input_program.c_str());
-	SimpleBus<2, 5> bus("SimpleBus");
-	SyscallHandler sys("SyscallHandler");
+	SimpleBus<2, 4> bus("SimpleBus");
 	CLINT<1> clint("CLINT");
 	DebugMemoryInterface dbg_if("DebugMemoryInterface");
 
@@ -124,27 +120,20 @@ int sc_main(int argc, char **argv) {
 
 	loader.load_executable_image(mem, opt.mem_size, opt.mem_start_addr, false);
 	core.init(instr_mem_if, data_mem_if, &clint, loader.get_entrypoint(), rv32_align_address(opt.mem_end_addr));
-	sys.init(nullptr, 0, loader.get_heap_addr()); // XXX: Don't pass nullptr
-	sys.register_core(&core);
-
-	if (opt.intercept_syscalls)
-		core.sys = &sys;
 
 	// setup port mapping
 	bus.ports[0] = new PortMapping(opt.mem_start_addr, opt.mem_end_addr);
 	bus.ports[1] = new PortMapping(opt.clint_start_addr, opt.clint_end_addr);
-	bus.ports[2] = new PortMapping(opt.sys_start_addr, opt.sys_end_addr);
-	bus.ports[3] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
-	bus.ports[4] = new PortMapping(opt.sensor_start_addr, opt.sensor_end_addr);
+	bus.ports[2] = new PortMapping(opt.sym_start_addr, opt.sym_end_addr);
+	bus.ports[3] = new PortMapping(opt.sensor_start_addr, opt.sensor_end_addr);
 
 	// connect TLM sockets
 	core_mem_if.isock.bind(bus.tsocks[0]);
 	dbg_if.isock.bind(bus.tsocks[1]);
 	bus.isocks[0].bind(mem.tsock);
 	bus.isocks[1].bind(clint.tsock);
-	bus.isocks[2].bind(sys.tsock);
-	bus.isocks[3].bind(symctrl.tsock);
-	bus.isocks[4].bind(sensor.tsock);
+	bus.isocks[2].bind(symctrl.tsock);
+	bus.isocks[3].bind(sensor.tsock);
 
 	// connect interrupt signals/communication
 	clint.target_harts[0] = &core;

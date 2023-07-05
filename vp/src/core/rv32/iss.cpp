@@ -454,22 +454,18 @@ void ISS::exec_step() {
 		} break;
 
 		case Opcode::ECALL: {
-			if (sys) {
-				sys->execute_syscall(this);
-			} else {
-				switch (prv) {
-					case MachineMode:
-						raise_trap(EXC_ECALL_M_MODE, last_pc);
-						break;
-					case SupervisorMode:
-						raise_trap(EXC_ECALL_S_MODE, last_pc);
-						break;
-					case UserMode:
-						raise_trap(EXC_ECALL_U_MODE, last_pc);
-						break;
-					default:
-						throw std::runtime_error("unknown privilege level " + std::to_string(prv));
-				}
+			switch (prv) {
+				case MachineMode:
+					raise_trap(EXC_ECALL_M_MODE, last_pc);
+					break;
+				case SupervisorMode:
+					raise_trap(EXC_ECALL_S_MODE, last_pc);
+					break;
+				case UserMode:
+					raise_trap(EXC_ECALL_U_MODE, last_pc);
+					break;
+				default:
+					throw std::runtime_error("unknown privilege level " + std::to_string(prv));
 			}
 		} break;
 
@@ -1582,14 +1578,6 @@ void ISS::init(instr_memory_if *instr_mem, data_memory_if *data_mem, clint_if *c
 void ISS::sys_exit() {
 	shall_exit = true;
 }
-
-unsigned ISS::get_syscall_register_index() {
-	if (csrs.misa.has_E_base_isa())
-		return RegFile::a5;
-	else
-		return RegFile::a7;
-}
-
 
 uint64_t ISS::read_register(unsigned idx) {
 	auto reg = regs.read(idx);

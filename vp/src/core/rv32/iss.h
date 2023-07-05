@@ -47,7 +47,6 @@
 #include "core/common/debug.h"
 #include "csr.h"
 #include "mem_if.h"
-#include "syscall_if.h"
 #include "symbolic_if.h"
 #include "symbolic_context.h"
 #include "util/common.h"
@@ -196,7 +195,7 @@ struct PendingInterrupts {
 	uint32_t pending;
 };
 
-struct ISS : public external_interrupt_target, public clint_interrupt_target, public iss_syscall_if, public debug_target_if, public symbolic_iss_if {
+struct ISS : public external_interrupt_target, public clint_interrupt_target, public debug_target_if, public symbolic_iss_if {
 	clover::Solver &solver;
 	clover::ExecutionContext &ctx;
 	clover::Trace &tracer;
@@ -204,7 +203,6 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 	clint_if *clint = nullptr;
 	instr_memory_if *instr_mem = nullptr;
 	data_memory_if *mem = nullptr;
-	syscall_emulator_if *sys = nullptr;  // optional, if provided, the iss will intercept and handle syscalls directly
 	RegFile regs;
 	uint32_t pc = 0;
 	uint32_t last_pc = 0;
@@ -253,9 +251,8 @@ struct ISS : public external_interrupt_target, public clint_interrupt_target, pu
 
 
 	void sys_exit() override;
-	unsigned get_syscall_register_index() override;
 	uint64_t read_register(unsigned idx) override;
-	void write_register(unsigned idx, uint64_t value) override;
+	void write_register(unsigned idx, uint64_t value);
 
     std::vector<uint64_t> get_registers(void) override;
 
