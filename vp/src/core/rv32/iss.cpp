@@ -134,15 +134,8 @@ const RegFile::RegValue &RegFile::operator[](const uint32_t idx) {
 
 void RegFile::show() {
 	for (size_t i = 0; i < regs.size(); i++) {
-		std::string bvs = "none";
-		if (regs[i]->symbolic.has_value()) {
-			auto q = trace.getQuery(*regs[i]->symbolic);
-			auto v = solver.evalValue<uint32_t>(q);
-			bvs = std::to_string(v);
-		}
-
-		uint32_t bvv = solver.getValue<uint32_t>(regs[i]->concrete);
-		printf("%s = (%s, %" PRIx32 ")\n", regnames[i], bvs.c_str(), bvv);
+		uint32_t val = solver.getValue<uint32_t>(regs[i]->concrete);
+		std::cout << regnames[i] << " = " << std::hex << val << std::dec << std::endl;
 	}
 }
 
