@@ -162,10 +162,8 @@ The following virtual prototypes are available:
   [SiFive HiFive1][sifive hifive1]. This allows executing software
   for embedded operating systems like [RIOT][riot website] or
   [Zephyr][zephyr website] symbolically.
-* `test32-vp`: This virtual prototype is intended to be used with
-  the [riscv-compliance][riscv-compliance github] repository. This is
-  primarily useful for development (e.g. during testing of new
-  RISC-V extensions).
+
+Other platforms from [riscv-vp][riscv-vp github] can be trivially ported.
 
 ## Environment Variables
 
@@ -233,7 +231,6 @@ copyright headers of individual files for more information.
 [sifive hifive1]: https://www.sifive.com/boards/hifive1
 [riot website]: https://riot-os.org/
 [zephyr website]: https://zephyrproject.org/
-[riscv-compliance github]: https://github.com/riscv/riscv-compliance/
 [symex-vp paper]: https://doi.org/10.1016/j.sysarc.2022.102456
 [symex-vp artifacts]: https://doi.org/10.24433/CO.7255660.v1
 [systemc restart]: https://github.com/accellera-official/systemc/issues/8
